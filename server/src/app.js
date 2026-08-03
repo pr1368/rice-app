@@ -1,28 +1,20 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const compression = require("compression");
-const morgan = require("morgan");
-const cookieParser = require("cookie-parser");
-const routes = require("./routes");
-
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import compression from "compression";
 
 const app = express();
 
 app.use(cors());
-app.use(helmet());
-app.use(compression());
-app.use(morgan("dev"));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use("/api", routes);
+app.use(compression());
 
-app.get("/", (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({
     success: true,
-    message: "Rice Shop API is running 🚀",
+    message: "Rice Shop API is running"
   });
 });
 
-module.exports = app;
+export default app;
