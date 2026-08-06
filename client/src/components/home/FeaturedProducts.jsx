@@ -1,27 +1,55 @@
+import Container from "../ui/Container";
+import SectionTitle from "../ui/SectionTitle";
+
 import ProductCard from "../product/ProductCard";
 
-function FeaturedProducts() {
+const products = [
+  {
+    id: 1,
+    title: "برنج هاشمی درجه یک",
+    image: "/images/products/hashemi.jpg",
+    price: 245000,
+    oldPrice: 270000,
+    rating: 4.9,
+    badge: "پرفروش",
+  },
+  {
+    id: 2,
+    title: "برنج طارم محلی",
+    image: "/images/products/tarom.jpg",
+    price: 230000,
+    rating: 4.8,
+    badge: "جدید",
+  },
+  {
+    id: 3,
+    title: "برنج فجر",
+    image: "/images/products/fajr.jpg",
+    price: 198000,
+    rating: 4.7,
+  },
+];
+
+const FeaturedProducts = () => {
   return (
-    <section className="bg-gray-50 py-20">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-10">
-          <h2 className="text-4xl font-bold">
-            محصولات ویژه
-          </h2>
+    <section className="py-20">
+      <Container>
+        <SectionTitle
+          title="محصولات ویژه"
+          subtitle="محبوب‌ترین محصولات فروشگاه"
+        />
 
-          <p className="mt-3 text-gray-500">
-            تازه‌ترین برنج‌های آماده فروش
-          </p>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              {...product}
+            />
+          ))}
         </div>
-
-        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-          <ProductCard />
-          <ProductCard />
-          <ProductCard />
-        </div>
-      </div>
+      </Container>
     </section>
   );
-}
+};
 
 export default FeaturedProducts;

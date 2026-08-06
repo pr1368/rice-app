@@ -1,11 +1,15 @@
 const SectionTitle = ({
   title,
   subtitle,
-  className = "",
 }) => {
   return (
-    <div className={`mb-12 text-center ${className}`}>
-      <h2 className="text-3xl font-extrabold text-gray-900 md:text-4xl">
+    <div className="mb-14 text-center">
+
+      <span className="text-green-700 font-semibold">
+        Rice Shop
+      </span>
+
+      <h2 className="mt-2 text-4xl font-black text-gray-900">
         {title}
       </h2>
 
@@ -14,6 +18,7 @@ const SectionTitle = ({
           {subtitle}
         </p>
       )}
+
     </div>
   );
 };

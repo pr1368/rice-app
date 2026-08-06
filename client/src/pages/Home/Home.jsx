@@ -1,13 +1,15 @@
 import Hero from "../../components/home/Hero";
+import Categories from "../../components/home/Categories/Categories";
 import FeaturedProducts from "../../components/home/FeaturedProducts";
 
-function Home() {
+const Home = () => {
   return (
     <>
       <Hero />
+      <Categories />
       <FeaturedProducts />
     </>
   );
-}
+};
 
 export default Home;
