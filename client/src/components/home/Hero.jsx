@@ -1,19 +1,22 @@
-import heroImage from "../../assets/images/hero/hero1.jpg";
+import heroImage from "../../assets/images/hero/hero.jpg";
 import { FaArrowLeft } from "react-icons/fa";
 
-function Hero() {
+import Badge from "../ui/Badge";
+import Button from "../ui/Button";
+import Container from "../ui/Container";
+
+const Hero = () => {
   return (
-    <section className="bg-[#f8fbf5]">
-      <div className="mx-auto flex min-h-[80vh] max-w-7xl flex-col-reverse items-center justify-between gap-12 px-6 py-16 lg:flex-row">
-
-        {/* متن */}
+    <section className="bg-[#f8fbf5] py-16">
+      <Container className="flex min-h-[80vh] flex-col-reverse items-center justify-between gap-12 lg:flex-row">
+        
+        {/* Text */}
         <div className="flex-1 text-center lg:text-right">
-
-          <span className="rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-700">
+          <Badge>
             🌾 برنج اصیل شمال ایران
-          </span>
+          </Badge>
 
-          <h1 className="mt-6 text-6xl font-extrabold leading-tight text-gray-900">
+          <h1 className="mt-6 text-5xl font-black leading-tight text-gray-900 lg:text-6xl">
             خرید مستقیم
             <span className="block text-green-700">
               برنج تازه
@@ -21,73 +24,72 @@ function Hero() {
             از کشاورز
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg leading-9 text-gray-600">
-            بهترین برنج هاشمی، طارم و فجر
-            با ارسال سریع، ضمانت کیفیت
-            و خرید مستقیم از شالیزار.
+          <p className="mt-6 max-w-xl leading-8 text-gray-600">
+            بهترین برنج هاشمی، طارم و فجر با ارسال سریع،
+            تضمین کیفیت و خرید مستقیم از شالیزار.
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-4 lg:justify-start">
-
-            <button className="rounded-xl bg-green-700 px-8 py-4 font-semibold text-white transition hover:bg-green-800">
+            <Button>
               خرید آنلاین
-            </button>
+            </Button>
 
-            <button className="flex items-center gap-2 rounded-xl border border-green-700 px-8 py-4 font-semibold text-green-700 transition hover:bg-green-700 hover:text-white">
-              مشاهده محصولات
-              <FaArrowLeft />
-            </button>
-
+            <Button variant="outline">
+              <span className="flex items-center gap-2">
+                مشاهده محصولات
+                <FaArrowLeft />
+              </span>
+            </Button>
           </div>
 
           <div className="mt-12 flex justify-center gap-10 lg:justify-start">
 
             <div>
-              <h2 className="text-3xl font-bold text-green-700">
-                +500
+              <h2 className="text-3xl font-black text-green-700">
+                +۵۰۰
               </h2>
+
               <p className="text-gray-500">
                 مشتری
               </p>
             </div>
 
             <div>
-              <h2 className="text-3xl font-bold text-green-700">
-                +20
+              <h2 className="text-3xl font-black text-green-700">
+                +۲۰
               </h2>
+
               <p className="text-gray-500">
                 نوع محصول
               </p>
             </div>
 
             <div>
-              <h2 className="text-3xl font-bold text-green-700">
-                100%
+              <h2 className="text-3xl font-black text-green-700">
+                ۱۰۰٪
               </h2>
+
               <p className="text-gray-500">
                 طبیعی
               </p>
             </div>
 
           </div>
-
         </div>
 
-        {/* تصویر */}
+        {/* Image */}
 
         <div className="flex flex-1 justify-center">
-
           <img
             src={heroImage}
-            alt="Rice"
-            className="w-full max-w-xl rounded-[40px] shadow-2xl"
+            alt="برنج ایرانی"
+            className="w-full max-w-xl rounded-[40px] object-cover shadow-2xl"
           />
-
         </div>
 
-      </div>
+      </Container>
     </section>
   );
-}
+};
 
 export default Hero;
