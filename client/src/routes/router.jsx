@@ -12,6 +12,8 @@ import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import Profile from "../pages/Profile/Profile";
 import NotFound from "../pages/NotFound/NotFound";
+import Checkout from "../pages/Checkout/Checkout";
+import OrderReview from "../pages/OrderReview/OrderReview";
 
 const router = createBrowserRouter([
   {
@@ -28,6 +30,8 @@ const router = createBrowserRouter([
       { path: "register", element: <Register /> },
       { path: "profile", element: <Profile /> },
       { path: "*", element: <NotFound /> },
+      {path: "/checkout",element: <Checkout />},
+      {path: "/order-review",element: <OrderReview />},
     ],
   },
 ]);
