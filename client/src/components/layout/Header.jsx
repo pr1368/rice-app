@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
 
 
 import {
@@ -14,6 +15,7 @@ import { navLinks } from "../../constants/navigation";
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { cart } = useCart();
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md">
@@ -56,15 +58,16 @@ function Header() {
             <FaUser />
           </button>
 
-          <button className="relative text-xl">
+<NavLink
+  to="/cart"
+  className="relative text-xl transition hover:text-green-700"
+>
+  <FaShoppingCart />
 
-            <FaShoppingCart />
-
-            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-              0
-            </span>
-
-          </button>
+<span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+  {cart.reduce((total, item) => total + item.quantity, 0)}
+</span>
+</NavLink>
 
           <button
             className="text-3xl md:hidden"

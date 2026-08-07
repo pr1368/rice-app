@@ -2,7 +2,12 @@ const products = [
   {
     id: 1,
     title: "برنج هاشمی ممتاز",
-    image: "/images/products/hashemi.jpg",
+    images: [
+  "/images/products/hashemi.jpg",
+  "/images/products/hashemi.jpg",
+  "/images/products/hashemi.jpg",
+  "/images/products/hashemi.jpg",
+],
     province: "مازندران",
     weight: "10 کیلوگرم",
     quality: "ممتاز",
