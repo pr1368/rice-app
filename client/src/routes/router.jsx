@@ -8,12 +8,12 @@ import ProductDetails from "../pages/ProductDetails/ProductDetails";
 import About from "../pages/About/About";
 import Contact from "../pages/Contact/Contact";
 import Cart from "../pages/Cart/Cart";
-import Login from "../pages/Login/Login";
-import Register from "../pages/Register/Register";
-import Profile from "../pages/Profile/Profile";
 import NotFound from "../pages/NotFound/NotFound";
 import Checkout from "../pages/Checkout/Checkout";
 import OrderReview from "../pages/OrderReview/OrderReview";
+import Register from "../pages/Authentication/Register/Register";
+import Login from "../pages/Authentication/Login/Login";
+import Profile from "../pages/Authentication/Profile/Profile";
 
 const router = createBrowserRouter([
   {
