@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import AuthInput from "../../../components/auth/AuthInput";
+import { useAuth } from "../../../context/AuthContext";
 
 function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -45,7 +47,7 @@ function Register() {
 
     if (!/^09\d{9}$/.test(formData.phone)) {
       newErrors.phone =
-        "شماره موبایل معتبر نیست.";
+        "شماره موبایل باید ۱۱ رقم و با 09 شروع شود.";
     }
 
     if (
@@ -67,7 +69,7 @@ function Register() {
       formData.confirmPassword
     ) {
       newErrors.confirmPassword =
-        "تکرار رمز عبور مطابقت ندارد.";
+        "تکرار رمز عبور با رمز عبور مطابقت ندارد.";
     }
 
     setErrors(newErrors);
@@ -82,9 +84,16 @@ function Register() {
       return;
     }
 
-    console.log("Register:", formData);
+    const newUser = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phone: formData.phone,
+      email: formData.email,
+    };
 
-    navigate("/login");
+    login(newUser);
+
+    navigate("/profile");
   };
 
   return (
@@ -94,6 +103,10 @@ function Register() {
         <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
 
           <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700">
+              👤
+            </div>
+
             <h1 className="text-3xl font-black text-gray-900">
               ایجاد حساب کاربری
             </h1>
@@ -173,7 +186,7 @@ function Register() {
               type="submit"
               className="w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800"
             >
-              ثبت‌نام
+              ایجاد حساب
             </button>
           </form>
 
@@ -182,7 +195,7 @@ function Register() {
 
             <Link
               to="/login"
-              className="mr-2 font-bold text-green-700 hover:text-green-800"
+              className="mr-2 font-bold text-green-700 transition hover:text-green-800"
             >
               ورود به حساب
             </Link>

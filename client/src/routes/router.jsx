@@ -2,36 +2,107 @@ import { createBrowserRouter } from "react-router-dom";
 
 import MainLayout from "../layouts/MainLayout";
 
+// Pages
 import Home from "../pages/Home/Home";
 import Products from "../pages/Products/Products";
 import ProductDetails from "../pages/ProductDetails/ProductDetails";
 import About from "../pages/About/About";
 import Contact from "../pages/Contact/Contact";
 import Cart from "../pages/Cart/Cart";
-import NotFound from "../pages/NotFound/NotFound";
 import Checkout from "../pages/Checkout/Checkout";
 import OrderReview from "../pages/OrderReview/OrderReview";
+import NotFound from "../pages/NotFound/NotFound";
+
+// Authentication
 import Register from "../pages/Authentication/Register/Register";
 import Login from "../pages/Authentication/Login/Login";
 import Profile from "../pages/Authentication/Profile/Profile";
+
+// Auth Protection
+import ProtectedRoute from "../components/auth/ProtectedRoute";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
+
     children: [
-      { index: true, element: <Home /> },
-      { path: "products", element: <Products /> },
-      {path: "/products/:id",element: <ProductDetails />},
-      { path: "about", element: <About /> },
-      { path: "contact", element: <Contact /> },
-      { path: "cart", element: <Cart /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "profile", element: <Profile /> },
-      { path: "*", element: <NotFound /> },
-      {path: "/checkout",element: <Checkout />},
-      {path: "/order-review",element: <OrderReview />},
+      // =========================
+      // Public Routes
+      // =========================
+
+      {
+        index: true,
+        element: <Home />,
+      },
+
+      {
+        path: "products",
+        element: <Products />,
+      },
+
+      {
+        path: "products/:id",
+        element: <ProductDetails />,
+      },
+
+      {
+        path: "about",
+        element: <About />,
+      },
+
+      {
+        path: "contact",
+        element: <Contact />,
+      },
+
+      {
+        path: "cart",
+        element: <Cart />,
+      },
+
+      {
+        path: "login",
+        element: <Login />,
+      },
+
+      {
+        path: "register",
+        element: <Register />,
+      },
+
+      // =========================
+      // Protected Routes
+      // =========================
+
+      {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: "profile",
+            element: <Profile />,
+          },
+
+          {
+            path: "checkout",
+            element: <Checkout />,
+          },
+
+          {
+            path: "order-review",
+            element: <OrderReview />,
+          },
+        ],
+      },
+
+      // =========================
+      // 404
+      // =========================
+
+      {
+        path: "*",
+        element: <NotFound />,
+      },
     ],
   },
 ]);

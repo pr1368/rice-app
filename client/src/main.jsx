@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { CartProvider } from "./context/CartContext";
+import { AuthProvider } from "./context/AuthContext";
 
 import { RouterProvider } from "react-router-dom";
 import { OrderProvider } from "./context/OrderContext";
@@ -14,7 +15,9 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
 <CartProvider>
   <OrderProvider>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </OrderProvider>
 </CartProvider>
   </StrictMode>
