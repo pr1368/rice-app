@@ -10,6 +10,7 @@ const productSchema = new mongoose.Schema(
 
     slug: {
       type: String,
+      required: true,
       unique: true,
       trim: true,
     },
@@ -28,6 +29,7 @@ const productSchema = new mongoose.Schema(
     weight: {
       type: Number,
       required: true,
+      min: 0,
     },
 
     category: {
