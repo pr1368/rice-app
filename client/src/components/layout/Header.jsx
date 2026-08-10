@@ -15,7 +15,6 @@ import {
 } from "react-icons/io5";
 
 import { navLinks } from "../../constants/navigation";
-
 import { useCart } from "../../context/CartContext";
 
 function Header() {
@@ -23,21 +22,27 @@ function Header() {
 
   const { totalItems } = useCart();
 
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
   return (
     <header className="border-b border-gray-100 bg-white shadow-sm">
+      {/* Header Container */}
+
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
 
         {/* Logo */}
 
         <NavLink
           to="/"
-          onClick={() => setMenuOpen(false)}
+          onClick={closeMenu}
           className="text-2xl font-black text-green-700 transition hover:text-green-800 sm:text-3xl"
         >
           RiceShop
         </NavLink>
 
-        {/* Desktop Menu */}
+        {/* Desktop Navigation */}
 
         <nav className="hidden items-center gap-8 md:flex">
           {navLinks.map((item) => (
@@ -72,16 +77,22 @@ function Header() {
           </NavLink>
         </nav>
 
-        {/* Right Actions */}
+        {/* Actions */}
 
         <div className="flex items-center gap-4">
 
-          {/* Profile */}
+          {/* Login / Profile */}
 
           <NavLink
-            to="/profile"
-            className="text-xl text-gray-700 transition hover:text-green-700"
-            aria-label="پروفایل"
+            to="/login"
+            aria-label="ورود به حساب کاربری"
+            className={({ isActive }) =>
+              `text-xl transition ${
+                isActive
+                  ? "text-green-700"
+                  : "text-gray-700 hover:text-green-700"
+              }`
+            }
           >
             <FaUser />
           </NavLink>
@@ -90,8 +101,14 @@ function Header() {
 
           <NavLink
             to="/cart"
-            className="relative text-xl text-gray-700 transition hover:text-green-700"
             aria-label="سبد خرید"
+            className={({ isActive }) =>
+              `relative text-xl transition ${
+                isActive
+                  ? "text-green-700"
+                  : "text-gray-700 hover:text-green-700"
+              }`
+            }
           >
             <FaShoppingCart />
 
@@ -106,13 +123,13 @@ function Header() {
 
           <button
             type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
             aria-label={
               menuOpen
                 ? "بستن منو"
                 : "باز کردن منو"
             }
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(!menuOpen)}
             className="text-3xl text-gray-700 transition hover:text-green-700 md:hidden"
           >
             {menuOpen ? (
@@ -125,18 +142,17 @@ function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Navigation */}
 
       {menuOpen && (
         <nav className="border-t border-gray-100 bg-white md:hidden">
-
           <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
 
             {navLinks.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
-                onClick={() => setMenuOpen(false)}
+                onClick={closeMenu}
                 className={({ isActive }) =>
                   `block rounded-xl px-4 py-3 font-medium transition ${
                     isActive
@@ -153,7 +169,7 @@ function Header() {
 
             <NavLink
               to="/products"
-              onClick={() => setMenuOpen(false)}
+              onClick={closeMenu}
               className={({ isActive }) =>
                 `block rounded-xl px-4 py-3 font-medium transition ${
                   isActive
@@ -163,6 +179,44 @@ function Header() {
               }
             >
               محصولات
+            </NavLink>
+
+            {/* Login */}
+
+            <NavLink
+              to="/login"
+              onClick={closeMenu}
+              className={({ isActive }) =>
+                `block rounded-xl px-4 py-3 font-medium transition ${
+                  isActive
+                    ? "bg-green-50 font-bold text-green-700"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-green-700"
+                }`
+              }
+            >
+              ورود / ثبت‌نام
+            </NavLink>
+
+            {/* Cart */}
+
+            <NavLink
+              to="/cart"
+              onClick={closeMenu}
+              className={({ isActive }) =>
+                `flex items-center justify-between rounded-xl px-4 py-3 font-medium transition ${
+                  isActive
+                    ? "bg-green-50 font-bold text-green-700"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-green-700"
+                }`
+              }
+            >
+              <span>سبد خرید</span>
+
+              {totalItems > 0 && (
+                <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+                  {totalItems}
+                </span>
+              )}
             </NavLink>
 
           </div>
