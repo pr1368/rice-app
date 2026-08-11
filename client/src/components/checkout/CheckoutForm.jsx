@@ -8,7 +8,7 @@ function CheckoutForm() {
   const navigate = useNavigate();
 
   const { cart, totalPrice } = useCart();
-  const { createOrder } = useOrder();
+  const { createOrder, loading, error } = useOrder();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -56,8 +56,7 @@ function CheckoutForm() {
     }
 
     if (!formData.address.trim()) {
-      newErrors.address =
-        "آدرس کامل را وارد کنید.";
+      newErrors.address = "آدرس کامل را وارد کنید.";
     }
 
     setErrors(newErrors);
@@ -65,8 +64,12 @@ function CheckoutForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (loading) {
+      return;
+    }
 
     if (cart.length === 0) {
       navigate("/cart");
@@ -79,13 +82,18 @@ function CheckoutForm() {
       return;
     }
 
-    createOrder({
-      customer: formData,
-      cart,
-      totalPrice,
-    });
+    try {
+      await createOrder({
+        customer: formData,
+        cart,
+        totalPrice,
+      });
 
-    navigate("/order-review");
+      navigate("/order-review");
+    } catch (err) {
+      // خطا توسط OrderContext مدیریت می‌شود
+      console.error("Create order error:", err);
+    }
   };
 
   return (
@@ -168,11 +176,18 @@ function CheckoutForm() {
         )}
       </div>
 
+      {error && (
+        <div className="mt-6 rounded-2xl bg-red-50 p-4 text-center text-red-600">
+          {error}
+        </div>
+      )}
+
       <button
         type="submit"
-        className="mt-8 w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800"
+        disabled={loading}
+        className="mt-8 w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        ثبت اطلاعات و ادامه
+        {loading ? "در حال ثبت سفارش..." : "ثبت اطلاعات و ادامه"}
       </button>
     </form>
   );

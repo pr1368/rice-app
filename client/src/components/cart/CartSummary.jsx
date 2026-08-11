@@ -1,16 +1,16 @@
-import Button from "../ui/Button";
-import { useCart } from "../../context/CartContext";
 import { Link } from "react-router-dom";
-
+import { useCart } from "../../context/CartContext";
 
 function CartSummary() {
-  const { totalPrice, dispatch } = useCart();
+  const { cart, totalPrice, dispatch } = useCart();
 
   const handleClearCart = () => {
     dispatch({
       type: "CLEAR_CART",
     });
   };
+
+  const isEmpty = cart.length === 0;
 
   return (
     <div className="sticky top-24 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -50,20 +50,32 @@ function CartSummary() {
         </div>
       </div>
 
-<Link
-  to="/checkout"
-  className="block w-full rounded-2xl bg-green-700 px-6 py-4 text-center font-bold text-white transition hover:bg-green-800"
->
-  ادامه ثبت سفارش
-</Link>
+      {!isEmpty ? (
+        <Link
+          to="/checkout"
+          className="block w-full rounded-2xl bg-green-700 px-6 py-4 text-center font-bold text-white transition hover:bg-green-800"
+        >
+          ادامه ثبت سفارش
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="w-full cursor-not-allowed rounded-2xl bg-gray-200 px-6 py-4 font-bold text-gray-400"
+        >
+          سبد خرید خالی است
+        </button>
+      )}
 
-      <button
-        type="button"
-        onClick={handleClearCart}
-        className="mt-4 w-full rounded-xl border border-red-200 px-4 py-3 font-bold text-red-500 transition hover:bg-red-50"
-      >
-        خالی کردن سبد خرید
-      </button>
+      {!isEmpty && (
+        <button
+          type="button"
+          onClick={handleClearCart}
+          className="mt-4 w-full rounded-xl border border-red-200 px-4 py-3 font-bold text-red-500 transition hover:bg-red-50"
+        >
+          خالی کردن سبد خرید
+        </button>
+      )}
     </div>
   );
 }

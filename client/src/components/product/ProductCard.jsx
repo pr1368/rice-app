@@ -10,18 +10,41 @@ import Button from "../ui/Button";
 import Card from "../ui/Card";
 
 const ProductCard = ({
+  _id,
   id,
+  name,
   title,
+  images = [],
   image,
   price,
   oldPrice,
   weight,
   rating = 5,
   badge,
-  stock = true,
+  stock = 0,
 }) => {
+  // MongoDB uses _id
+  // Mock data used id
+  const productId = _id || id;
+
+  // Product name from API
+  // title is kept for compatibility with old data
+  const productName = name || title || "محصول بدون نام";
+
+  // First image from images array
+  // image is kept for compatibility with old products
+  const imageUrl =
+    images?.[0] ||
+    image ||
+    "https://placehold.co/800x600?text=RiceShop";
+
+  // Stock
+  const isInStock = Number(stock) > 0;
+
+  // Discount
   const hasDiscount =
-    oldPrice && Number(oldPrice) > Number(price);
+    oldPrice &&
+    Number(oldPrice) > Number(price);
 
   const discount = hasDiscount
     ? Math.round(
@@ -31,17 +54,14 @@ const ProductCard = ({
       )
     : 0;
 
-  const imageUrl =
-    image || "https://placehold.co/800x600?text=RiceShop";
-
   return (
     <Card className="group overflow-hidden">
       {/* Image */}
       <div className="relative overflow-hidden">
-        <Link to={`/products/${id}`}>
+        <Link to={`/products/${productId}`}>
           <img
             src={imageUrl}
-            alt={title}
+            alt={productName}
             className="
               h-72
               w-full
@@ -50,6 +70,10 @@ const ProductCard = ({
               duration-500
               group-hover:scale-110
             "
+            onError={(event) => {
+              event.currentTarget.src =
+                "https://placehold.co/800x600?text=RiceShop";
+            }}
           />
         </Link>
 
@@ -107,9 +131,8 @@ const ProductCard = ({
 
       {/* Body */}
       <div className="space-y-5 p-6">
-
         {/* Title */}
-        <Link to={`/products/${id}`}>
+        <Link to={`/products/${productId}`}>
           <h3
             className="
               line-clamp-2
@@ -120,13 +143,12 @@ const ProductCard = ({
               hover:text-green-700
             "
           >
-            {title}
+            {productName}
           </h3>
         </Link>
 
         {/* Rating & Stock */}
         <div className="flex items-center justify-between">
-
           <div className="flex items-center gap-2">
             <FaStar className="text-yellow-400" />
 
@@ -137,12 +159,12 @@ const ProductCard = ({
 
           <span
             className={`text-sm font-semibold ${
-              stock
+              isInStock
                 ? "text-green-600"
                 : "text-red-500"
             }`}
           >
-            {stock ? "موجود" : "ناموجود"}
+            {isInStock ? "موجود" : "ناموجود"}
           </span>
         </div>
 
@@ -151,7 +173,9 @@ const ProductCard = ({
           <span>وزن بسته</span>
 
           <span className="font-semibold text-gray-700">
-            {weight} کیلوگرم
+            {weight
+              ? `${weight} کیلوگرم`
+              : "ثبت نشده"}
           </span>
         </div>
 
@@ -168,13 +192,13 @@ const ProductCard = ({
           </h3>
         </div>
 
-        {/* Add to Cart */}
+        {/* Add To Cart */}
         <Button
           fullWidth
           icon={<FaShoppingCart />}
-          disabled={!stock}
+          disabled={!isInStock}
         >
-          {stock
+          {isInStock
             ? "افزودن به سبد خرید"
             : "ناموجود"}
         </Button>

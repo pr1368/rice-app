@@ -11,34 +11,46 @@ function CartItem({ item }) {
 
   return (
     <div className="flex flex-col gap-6 rounded-3xl border bg-white p-6 shadow-sm md:flex-row md:items-center">
-
+      
+      {/* Image */}
       <img
-        src={item.image}
-        alt={item.title}
+        src={
+          item.image ||
+          "https://placehold.co/800x600?text=RiceShop"
+        }
+        alt={item.name}
         className="h-32 w-32 rounded-2xl object-cover"
+        onError={(event) => {
+          event.currentTarget.src =
+            "https://placehold.co/800x600?text=RiceShop";
+        }}
       />
 
+      {/* Product Info */}
       <div className="flex-1">
 
         <h2 className="text-xl font-bold">
-          {item.title}
+          {item.name}
         </h2>
 
         <p className="mt-2 text-gray-500">
-          وزن:
-          {" "}
-          {item.weight}
+          وزن:{" "}
+          <span className="font-semibold text-gray-700">
+            {item.weight} کیلوگرم
+          </span>
         </p>
 
         <p className="mt-2 text-2xl font-black text-green-700">
-          {item.price.toLocaleString()} تومان
+          {Number(item.price).toLocaleString()} تومان
         </p>
 
       </div>
 
+      {/* Quantity */}
       <div className="flex items-center gap-3">
 
         <button
+          type="button"
           onClick={() =>
             dispatch({
               type: "DECREASE",
@@ -48,7 +60,7 @@ function CartItem({ item }) {
               },
             })
           }
-          className="rounded-lg border p-3 hover:bg-gray-100"
+          className="rounded-lg border p-3 transition hover:bg-gray-100"
         >
           <FaMinus />
         </button>
@@ -58,6 +70,7 @@ function CartItem({ item }) {
         </span>
 
         <button
+          type="button"
           onClick={() =>
             dispatch({
               type: "INCREASE",
@@ -67,14 +80,16 @@ function CartItem({ item }) {
               },
             })
           }
-          className="rounded-lg border p-3 hover:bg-gray-100"
+          className="rounded-lg border p-3 transition hover:bg-gray-100"
         >
           <FaPlus />
         </button>
 
       </div>
 
+      {/* Remove */}
       <button
+        type="button"
         onClick={() =>
           dispatch({
             type: "REMOVE_FROM_CART",
@@ -85,6 +100,7 @@ function CartItem({ item }) {
           })
         }
         className="text-red-500 transition hover:text-red-700"
+        aria-label="حذف محصول"
       >
         <FaTrash size={22} />
       </button>

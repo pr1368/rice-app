@@ -18,6 +18,7 @@ const productSchema = new mongoose.Schema(
     description: {
       type: String,
       default: "",
+      trim: true,
     },
 
     price: {
@@ -38,10 +39,51 @@ const productSchema = new mongoose.Schema(
       trim: true,
     },
 
-    image: {
+    // مبدأ محصول
+    province: {
       type: String,
       default: "",
+      trim: true,
     },
+
+    // کیفیت محصول
+    quality: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // سال برداشت
+    harvest: {
+      type: Number,
+      default: null,
+    },
+
+    // نوع برنج
+    riceType: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // میزان عطر
+    aroma: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // زمان تقریبی پخت
+    cookingTime: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
+images: {
+  type: [String],
+  default: [],
+},
 
     stock: {
       type: Number,
