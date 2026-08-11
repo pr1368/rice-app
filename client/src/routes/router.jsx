@@ -11,6 +11,7 @@ import Contact from "../pages/Contact/Contact";
 import Cart from "../pages/Cart/Cart";
 import Checkout from "../pages/Checkout/Checkout";
 import OrderReview from "../pages/OrderReview/OrderReview";
+import OrderSuccess from "../pages/Order/OrderSuccess";
 import NotFound from "../pages/NotFound/NotFound";
 
 // Authentication
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
 
       {
         element: <ProtectedRoute />,
+
         children: [
           {
             path: "profile",
@@ -91,6 +93,11 @@ const router = createBrowserRouter([
           {
             path: "order-review",
             element: <OrderReview />,
+          },
+
+          {
+            path: "order-success",
+            element: <OrderSuccess />,
           },
         ],
       },

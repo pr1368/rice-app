@@ -7,7 +7,6 @@ dotenv.config();
 
 // MongoDB Atlas DNS
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
-
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {

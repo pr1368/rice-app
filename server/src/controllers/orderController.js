@@ -72,3 +72,52 @@ export const createOrder = async (req, res) => {
     });
   }
 };
+
+// POST /api/orders/:id/pay
+export const payOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "سفارش پیدا نشد.",
+      });
+    }
+
+    if (order.status === "paid") {
+      return res.status(400).json({
+        success: false,
+        message: "این سفارش قبلاً پرداخت شده است.",
+      });
+    }
+
+    if (order.status === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "سفارش لغو شده و قابل پرداخت نیست.",
+      });
+    }
+
+    // پرداخت تستی
+    order.status = "paid";
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "پرداخت با موفقیت انجام شد.",
+      order,
+    });
+  } catch (error) {
+    console.error("Pay order error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "پرداخت سفارش با خطا مواجه شد.",
+      error: error.message,
+    });
+  }
+};
