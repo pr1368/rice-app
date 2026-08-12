@@ -16,24 +16,25 @@ import {
 
 import { navLinks } from "../../constants/navigation";
 import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const { totalItems } = useCart();
+  const { isAuthenticated } = useAuth();
 
   const closeMenu = () => {
     setMenuOpen(false);
   };
 
+  const accountPath = isAuthenticated ? "/profile" : "/login";
+
   return (
     <header className="border-b border-gray-100 bg-white shadow-sm">
-      {/* Header Container */}
-
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
 
         {/* Logo */}
-
         <NavLink
           to="/"
           onClick={closeMenu}
@@ -43,7 +44,6 @@ function Header() {
         </NavLink>
 
         {/* Desktop Navigation */}
-
         <nav className="hidden items-center gap-8 md:flex">
           {navLinks.map((item) => (
             <NavLink
@@ -61,8 +61,6 @@ function Header() {
             </NavLink>
           ))}
 
-          {/* Products */}
-
           <NavLink
             to="/products"
             className={({ isActive }) =>
@@ -78,14 +76,16 @@ function Header() {
         </nav>
 
         {/* Actions */}
-
         <div className="flex items-center gap-4">
 
           {/* Login / Profile */}
-
           <NavLink
-            to="/login"
-            aria-label="ورود به حساب کاربری"
+            to={accountPath}
+            aria-label={
+              isAuthenticated
+                ? "پروفایل کاربری"
+                : "ورود به حساب کاربری"
+            }
             className={({ isActive }) =>
               `text-xl transition ${
                 isActive
@@ -98,7 +98,6 @@ function Header() {
           </NavLink>
 
           {/* Cart */}
-
           <NavLink
             to="/cart"
             aria-label="سبد خرید"
@@ -120,10 +119,9 @@ function Header() {
           </NavLink>
 
           {/* Mobile Menu Button */}
-
           <button
             type="button"
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => setMenuOpen((prev) => !prev)}
             aria-label={
               menuOpen
                 ? "بستن منو"
@@ -138,12 +136,10 @@ function Header() {
               <HiOutlineMenuAlt3 />
             )}
           </button>
-
         </div>
       </div>
 
       {/* Mobile Navigation */}
-
       {menuOpen && (
         <nav className="border-t border-gray-100 bg-white md:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
@@ -166,7 +162,6 @@ function Header() {
             ))}
 
             {/* Products */}
-
             <NavLink
               to="/products"
               onClick={closeMenu}
@@ -181,10 +176,9 @@ function Header() {
               محصولات
             </NavLink>
 
-            {/* Login */}
-
+            {/* Account */}
             <NavLink
-              to="/login"
+              to={accountPath}
               onClick={closeMenu}
               className={({ isActive }) =>
                 `block rounded-xl px-4 py-3 font-medium transition ${
@@ -194,11 +188,12 @@ function Header() {
                 }`
               }
             >
-              ورود / ثبت‌نام
+              {isAuthenticated
+                ? "پروفایل من"
+                : "ورود / ثبت‌نام"}
             </NavLink>
 
             {/* Cart */}
-
             <NavLink
               to="/cart"
               onClick={closeMenu}
@@ -218,7 +213,6 @@ function Header() {
                 </span>
               )}
             </NavLink>
-
           </div>
         </nav>
       )}

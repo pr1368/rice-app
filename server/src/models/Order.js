@@ -44,6 +44,12 @@ const orderItemSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
     customer: {
       firstName: {
         type: String,
@@ -79,6 +85,7 @@ const orderSchema = new mongoose.Schema(
     items: {
       type: [orderItemSchema],
       required: true,
+
       validate: {
         validator: (items) => items.length > 0,
         message: "سفارش باید حداقل یک محصول داشته باشد.",

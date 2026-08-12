@@ -21,6 +21,7 @@ import Profile from "../pages/Authentication/Profile/Profile";
 
 // Auth Protection
 import ProtectedRoute from "../components/auth/ProtectedRoute";
+import EditProfile from "../pages/Authentication/Profile/EditProfile";
 
 const router = createBrowserRouter([
   {
@@ -84,6 +85,9 @@ const router = createBrowserRouter([
             path: "profile",
             element: <Profile />,
           },
+         {path:"/profile/edit",
+         element:<EditProfile/>
+          } ,
 
           {
             path: "checkout",

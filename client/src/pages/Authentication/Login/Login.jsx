@@ -6,7 +6,12 @@ import { useAuth } from "../../../context/AuthContext";
 
 function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+
+  const {
+    login,
+    loading,
+    error: authError,
+  } = useAuth();
 
   const [formData, setFormData] = useState({
     phone: "",
@@ -38,8 +43,7 @@ function Login() {
     }
 
     if (!formData.password) {
-      newErrors.password =
-        "رمز عبور را وارد کنید.";
+      newErrors.password = "رمز عبور را وارد کنید.";
     }
 
     setErrors(newErrors);
@@ -47,24 +51,30 @@ function Login() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    login({
-      phone: formData.phone,
-    });
+    try {
+      await login({
+        phone: formData.phone,
+        password: formData.password,
+      });
 
-    navigate("/profile");
+      navigate("/profile", {
+        replace: true,
+      });
+    } catch (error) {
+      // خطا داخل AuthContext مدیریت می‌شود
+    }
   };
 
   return (
     <section className="min-h-[calc(100vh-80px)] bg-gray-50 py-16">
       <div className="mx-auto max-w-md px-4">
-
         <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
 
           <div className="mb-8 text-center">
@@ -80,6 +90,12 @@ function Login() {
               به حساب کاربری RiceShop خود وارد شوید.
             </p>
           </div>
+
+          {authError && (
+            <div className="mb-5 rounded-2xl bg-red-50 p-4 text-center text-sm font-bold leading-6 text-red-600">
+              {authError}
+            </div>
+          )}
 
           <form
             onSubmit={handleSubmit}
@@ -116,9 +132,10 @@ function Login() {
 
             <button
               type="submit"
-              className="w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800"
+              disabled={loading}
+              className="w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              ورود به حساب
+              {loading ? "در حال ورود..." : "ورود به حساب"}
             </button>
           </form>
 
