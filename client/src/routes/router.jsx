@@ -22,6 +22,8 @@ import Profile from "../pages/Authentication/Profile/Profile";
 // Auth Protection
 import ProtectedRoute from "../components/auth/ProtectedRoute";
 import EditProfile from "../pages/Authentication/Profile/EditProfile";
+import Orders from "../pages/Order/Orders";
+import OrderDetails from "../pages/Order/OrderDetails";
 
 const router = createBrowserRouter([
   {
@@ -93,7 +95,15 @@ const router = createBrowserRouter([
             path: "checkout",
             element: <Checkout />,
           },
-
+      {
+         path:"/orders",
+        element:<Orders/>
+      },
+      {
+  path: "/orders/:id",
+  element: <OrderDetails />,
+}
+      ,
           {
             path: "order-review",
             element: <OrderReview />,
