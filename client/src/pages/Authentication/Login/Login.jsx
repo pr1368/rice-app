@@ -121,13 +121,14 @@ function Login() {
               error={errors.password}
             />
 
+            {/* فراموشی رمز عبور */}
             <div className="flex justify-end">
-              <button
-                type="button"
+              <Link
+                to="/forgot-password"
                 className="text-sm font-bold text-green-700 transition hover:text-green-800"
               >
                 رمز عبور را فراموش کرده‌اید؟
-              </button>
+              </Link>
             </div>
 
             <button
@@ -135,7 +136,9 @@ function Login() {
               disabled={loading}
               className="w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "در حال ورود..." : "ورود به حساب"}
+              {loading
+                ? "در حال ورود..."
+                : "ورود به حساب"}
             </button>
           </form>
 

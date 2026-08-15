@@ -18,12 +18,18 @@ import NotFound from "../pages/NotFound/NotFound";
 import Register from "../pages/Authentication/Register/Register";
 import Login from "../pages/Authentication/Login/Login";
 import Profile from "../pages/Authentication/Profile/Profile";
+import EditProfile from "../pages/Authentication/Profile/EditProfile";
+
+// Password Reset
+import ForgotPassword from "../pages/Authentication/ForgotPassword/ForgotPassword";
+import ResetPassword from "../pages/Authentication/ResetPassword/ResetPassword";
+
+// Orders
+import Orders from "../pages/Order/Orders";
+import OrderDetails from "../pages/Order/OrderDetails";
 
 // Auth Protection
 import ProtectedRoute from "../components/auth/ProtectedRoute";
-import EditProfile from "../pages/Authentication/Profile/EditProfile";
-import Orders from "../pages/Order/Orders";
-import OrderDetails from "../pages/Order/OrderDetails";
 
 const router = createBrowserRouter([
   {
@@ -65,6 +71,10 @@ const router = createBrowserRouter([
         element: <Cart />,
       },
 
+      // =========================
+      // Authentication
+      // =========================
+
       {
         path: "login",
         element: <Login />,
@@ -73,6 +83,20 @@ const router = createBrowserRouter([
       {
         path: "register",
         element: <Register />,
+      },
+
+      // =========================
+      // Password Reset
+      // =========================
+
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />,
+      },
+
+      {
+        path: "reset-password/:token",
+        element: <ResetPassword />,
       },
 
       // =========================
@@ -87,23 +111,27 @@ const router = createBrowserRouter([
             path: "profile",
             element: <Profile />,
           },
-         {path:"/profile/edit",
-         element:<EditProfile/>
-          } ,
+
+          {
+            path: "profile/edit",
+            element: <EditProfile />,
+          },
 
           {
             path: "checkout",
             element: <Checkout />,
           },
-      {
-         path:"/orders",
-        element:<Orders/>
-      },
-      {
-  path: "/orders/:id",
-  element: <OrderDetails />,
-}
-      ,
+
+          {
+            path: "orders",
+            element: <Orders />,
+          },
+
+          {
+            path: "orders/:id",
+            element: <OrderDetails />,
+          },
+
           {
             path: "order-review",
             element: <OrderReview />,
