@@ -3,9 +3,10 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 import User from "../models/User.js";
+import { sendPasswordResetEmail } from "../utils/email.js";
 
 // ======================================================
-// ساخت JWT
+// JWT
 // ======================================================
 
 const generateToken = (userId) => {
@@ -37,10 +38,6 @@ export const register = async (req, res) => {
       postalCode = "",
     } = req.body;
 
-    // -----------------------------
-    // بررسی اطلاعات ضروری
-    // -----------------------------
-
     if (
       !firstName ||
       !lastName ||
@@ -54,19 +51,9 @@ export const register = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // نرمال کردن اطلاعات
-    // -----------------------------
-
     const normalizedPhone = phone.trim();
 
-    const normalizedEmail = email
-      .trim()
-      .toLowerCase();
-
-    // -----------------------------
-    // اعتبارسنجی شماره موبایل
-    // -----------------------------
+    const normalizedEmail = email.trim().toLowerCase();
 
     if (!/^09\d{9}$/.test(normalizedPhone)) {
       return res.status(400).json({
@@ -75,23 +62,12 @@ export const register = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // اعتبارسنجی ایمیل
-    // -----------------------------
-
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(normalizedEmail)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       return res.status(400).json({
         success: false,
         message: "ایمیل معتبر نیست.",
       });
     }
-
-    // -----------------------------
-    // اعتبارسنجی رمز
-    // -----------------------------
 
     if (password.length < 6) {
       return res.status(400).json({
@@ -99,10 +75,6 @@ export const register = async (req, res) => {
         message: "رمز عبور باید حداقل ۶ کاراکتر باشد.",
       });
     }
-
-    // -----------------------------
-    // بررسی کاربر تکراری
-    // -----------------------------
 
     const existingUser = await User.findOne({
       $or: [
@@ -116,13 +88,10 @@ export const register = async (req, res) => {
     });
 
     if (existingUser) {
-      if (
-        existingUser.phone === normalizedPhone
-      ) {
+      if (existingUser.phone === normalizedPhone) {
         return res.status(409).json({
           success: false,
-          message:
-            "این شماره موبایل قبلاً ثبت شده است.",
+          message: "این شماره موبایل قبلاً ثبت شده است.",
         });
       }
 
@@ -132,18 +101,7 @@ export const register = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // هش کردن رمز
-    // -----------------------------
-
-    const hashedPassword = await bcrypt.hash(
-      password,
-      12
-    );
-
-    // -----------------------------
-    // ساخت کاربر
-    // -----------------------------
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await User.create({
       firstName: firstName.trim(),
@@ -155,16 +113,13 @@ export const register = async (req, res) => {
       postalCode: postalCode.trim(),
     });
 
-    // -----------------------------
-    // ساخت JWT
-    // -----------------------------
-
     const token = generateToken(user._id);
 
     return res.status(201).json({
       success: true,
       message: "ثبت‌نام با موفقیت انجام شد.",
       token,
+
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -177,10 +132,6 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
-
-    // -----------------------------
-    // خطای unique در MongoDB
-    // -----------------------------
 
     if (error.code === 11000) {
       const duplicateField = Object.keys(
@@ -199,7 +150,6 @@ export const register = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "ثبت‌نام با خطا مواجه شد.",
-      error: error.message,
     });
   }
 };
@@ -213,58 +163,35 @@ export const login = async (req, res) => {
   try {
     const { phone, password } = req.body;
 
-    // -----------------------------
-    // بررسی ورودی
-    // -----------------------------
-
     if (!phone || !password) {
       return res.status(400).json({
         success: false,
-        message:
-          "شماره موبایل و رمز عبور الزامی هستند.",
+        message: "شماره موبایل و رمز عبور الزامی هستند.",
       });
     }
 
-    const normalizedPhone = phone.trim();
-
-    // -----------------------------
-    // پیدا کردن کاربر
-    // password در Schema select:false است
-    // -----------------------------
-
     const user = await User.findOne({
-      phone: normalizedPhone,
+      phone: phone.trim(),
     }).select("+password");
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message:
-          "شماره موبایل یا رمز عبور اشتباه است.",
+        message: "شماره موبایل یا رمز عبور اشتباه است.",
       });
     }
 
-    // -----------------------------
-    // بررسی رمز
-    // -----------------------------
-
-    const isPasswordCorrect =
-      await bcrypt.compare(
-        password,
-        user.password
-      );
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
-        message:
-          "شماره موبایل یا رمز عبور اشتباه است.",
+        message: "شماره موبایل یا رمز عبور اشتباه است.",
       });
     }
-
-    // -----------------------------
-    // ساخت JWT
-    // -----------------------------
 
     const token = generateToken(user._id);
 
@@ -272,6 +199,7 @@ export const login = async (req, res) => {
       success: true,
       message: "ورود با موفقیت انجام شد.",
       token,
+
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -288,7 +216,6 @@ export const login = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "ورود با خطا مواجه شد.",
-      error: error.message,
     });
   }
 };
@@ -300,9 +227,7 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(
-      req.user.userId
-    );
+    const user = await User.findById(req.user.userId);
 
     if (!user) {
       return res.status(404).json({
@@ -313,6 +238,7 @@ export const getMe = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -328,26 +254,19 @@ export const getMe = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message:
-        "دریافت اطلاعات کاربر با خطا مواجه شد.",
-      error: error.message,
+      message: "دریافت اطلاعات کاربر با خطا مواجه شد.",
     });
   }
 };
 
 // ======================================================
 // POST /api/auth/forgot-password
-// درخواست بازیابی رمز عبور
-// با ایمیل یا شماره موبایل
+// بازیابی رمز با ایمیل یا شماره موبایل
 // ======================================================
 
 export const forgotPassword = async (req, res) => {
   try {
     const { identifier } = req.body;
-
-    // -----------------------------
-    // بررسی ورودی
-    // -----------------------------
 
     if (!identifier) {
       return res.status(400).json({
@@ -359,10 +278,6 @@ export const forgotPassword = async (req, res) => {
 
     const value = identifier.trim();
 
-    // -----------------------------
-    // تشخیص ایمیل یا شماره موبایل
-    // -----------------------------
-
     const isPhone = /^09\d{9}$/.test(value);
 
     const isEmail =
@@ -372,48 +287,59 @@ export const forgotPassword = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "ایمیل یا شماره موبایل واردشده معتبر نیست.",
+          "لطفاً یک ایمیل معتبر یا شماره موبایل معتبر وارد کنید.",
       });
     }
 
-    // -----------------------------
+    // --------------------------------------------------
     // پیدا کردن کاربر
-    // -----------------------------
+    // --------------------------------------------------
 
-    const user = await User.findOne(
-      isPhone
-        ? { phone: value }
-        : { email: value.toLowerCase() }
-    ).select(
-      "+resetPasswordToken +resetPasswordExpires"
-    );
+    let user;
 
-    /*
-      اگر کاربر پیدا نشد، پاسخ عمومی می‌دهیم
-      تا مشخص نشود اطلاعات واردشده در سیستم
-      وجود دارد یا خیر.
-    */
+    if (isPhone) {
+      user = await User.findOne({
+        phone: value,
+      }).select(
+        "+resetPasswordToken +resetPasswordExpires"
+      );
+    }
+
+    if (isEmail) {
+      user = await User.findOne({
+        email: value.toLowerCase(),
+      }).select(
+        "+resetPasswordToken +resetPasswordExpires"
+      );
+    }
 
     if (!user) {
-      return res.status(200).json({
-        success: true,
+      return res.status(404).json({
+        success: false,
         message:
-          "اگر اطلاعات واردشده در سیستم ثبت شده باشد، لینک بازیابی ایجاد خواهد شد.",
+          "کاربری با این ایمیل یا شماره موبایل پیدا نشد.",
       });
     }
 
-    // -----------------------------
-    // ساخت توکن تصادفی
-    // -----------------------------
+    // --------------------------------------------------
+    // بررسی ایمیل
+    // --------------------------------------------------
+
+    if (!user.email) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "برای این حساب ایمیل ثبت نشده است.",
+      });
+    }
+
+    // --------------------------------------------------
+    // ساخت Reset Token
+    // --------------------------------------------------
 
     const resetToken = crypto
       .randomBytes(32)
       .toString("hex");
-
-    // -----------------------------
-    // هش کردن Token
-    // فقط نسخه هش‌شده در DB ذخیره می‌شود
-    // -----------------------------
 
     const hashedToken = crypto
       .createHash("sha256")
@@ -422,15 +348,15 @@ export const forgotPassword = async (req, res) => {
 
     user.resetPasswordToken = hashedToken;
 
-    // اعتبار لینک: 15 دقیقه
-    user.resetPasswordExpires =
-      new Date(Date.now() + 15 * 60 * 1000);
+    user.resetPasswordExpires = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
 
     await user.save();
 
-    // -----------------------------
+    // --------------------------------------------------
     // ساخت لینک بازیابی
-    // -----------------------------
+    // --------------------------------------------------
 
     const clientUrl =
       process.env.CLIENT_URL ||
@@ -439,38 +365,69 @@ export const forgotPassword = async (req, res) => {
     const resetUrl =
       `${clientUrl}/reset-password/${resetToken}`;
 
-    // -----------------------------
-    // فعلاً ایمیل ارسال نمی‌کنیم
-    // لینک در Terminal نمایش داده می‌شود
-    // -----------------------------
+    // --------------------------------------------------
+    // Debug
+    // --------------------------------------------------
 
     console.log("");
+    console.log("======================================");
+    console.log("PASSWORD RESET REQUEST");
+    console.log("User:", user._id);
+    console.log("Phone:", user.phone);
+    console.log("Email:", user.email);
+    console.log("Reset URL:", resetUrl);
+    console.log("SMTP USER:", process.env.SMTP_USER);
     console.log(
-      "=========================================="
+      "SMTP PASS:",
+      process.env.SMTP_PASS
+        ? "SET"
+        : "NOT SET"
     );
-    console.log("PASSWORD RESET URL:");
-    console.log(resetUrl);
-    console.log(
-      "=========================================="
-    );
+    console.log("======================================");
+    console.log("");
+
+    // --------------------------------------------------
+    // ارسال ایمیل
+    // فقط از utils/email.js
+    // --------------------------------------------------
+
+    const info = await sendPasswordResetEmail({
+      to: user.email,
+      firstName: user.firstName,
+      resetUrl,
+    });
+
+    // --------------------------------------------------
+    // موفقیت ارسال
+    // --------------------------------------------------
+
+    console.log("");
+    console.log("======================================");
+    console.log("EMAIL SENT SUCCESSFULLY");
+    console.log("TO:", user.email);
+    console.log("MESSAGE ID:", info.messageId);
+    console.log("======================================");
     console.log("");
 
     return res.status(200).json({
       success: true,
       message:
-        "اگر اطلاعات واردشده در سیستم ثبت شده باشد، لینک بازیابی ایجاد خواهد شد.",
+        "لینک بازیابی رمز عبور به ایمیل شما ارسال شد.",
     });
   } catch (error) {
-    console.error(
-      "Forgot password error:",
-      error
-    );
+    console.error("");
+    console.error("======================================");
+    console.error("FORGOT PASSWORD ERROR");
+    console.error("CODE:", error.code);
+    console.error("COMMAND:", error.command);
+    console.error("MESSAGE:", error.message);
+    console.error("======================================");
+    console.error("");
 
     return res.status(500).json({
       success: false,
       message:
-        "درخواست بازیابی رمز با خطا مواجه شد.",
-      error: error.message,
+        "ارسال لینک بازیابی با خطا مواجه شد.",
     });
   }
 };
@@ -485,10 +442,6 @@ export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
 
-    // -----------------------------
-    // بررسی Token
-    // -----------------------------
-
     if (!token) {
       return res.status(400).json({
         success: false,
@@ -496,15 +449,10 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // بررسی رمز جدید
-    // -----------------------------
-
     if (!password) {
       return res.status(400).json({
         success: false,
-        message:
-          "رمز عبور جدید را وارد کنید.",
+        message: "رمز عبور جدید را وارد کنید.",
       });
     }
 
@@ -516,27 +464,27 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // هش کردن Token دریافتی
-    // -----------------------------
+    // --------------------------------------------------
+    // Hash کردن token دریافتی
+    // --------------------------------------------------
 
     const hashedToken = crypto
       .createHash("sha256")
       .update(token)
       .digest("hex");
 
-    // -----------------------------
-    // پیدا کردن کاربر
-    // Token باید معتبر و منقضی نشده باشد
-    // -----------------------------
+    // --------------------------------------------------
+    // پیدا کردن کاربر و بررسی انقضای token
+    // --------------------------------------------------
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
+
       resetPasswordExpires: {
         $gt: new Date(),
       },
     }).select(
-      "+resetPasswordToken +resetPasswordExpires +password"
+      "+password +resetPasswordToken +resetPasswordExpires"
     );
 
     if (!user) {
@@ -547,19 +495,20 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // هش کردن رمز جدید
-    // -----------------------------
+    // --------------------------------------------------
+    // Hash کردن رمز جدید
+    // --------------------------------------------------
 
-    const hashedPassword =
-      await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(
+      password,
+      12
+    );
 
     user.password = hashedPassword;
 
-    // -----------------------------
-    // حذف Token
-    // Token فقط یک بار قابل استفاده است
-    // -----------------------------
+    // --------------------------------------------------
+    // باطل کردن token
+    // --------------------------------------------------
 
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
@@ -569,7 +518,7 @@ export const resetPassword = async (req, res) => {
     return res.status(200).json({
       success: true,
       message:
-        "رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.",
+        "رمز عبور با موفقیت تغییر کرد.",
     });
   } catch (error) {
     console.error(
@@ -581,7 +530,6 @@ export const resetPassword = async (req, res) => {
       success: false,
       message:
         "تغییر رمز عبور با خطا مواجه شد.",
-      error: error.message,
     });
   }
 };

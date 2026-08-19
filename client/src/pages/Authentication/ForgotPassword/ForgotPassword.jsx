@@ -9,23 +9,62 @@ function ForgotPassword() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ======================================================
+  // تغییر مقدار ورودی
+  // ======================================================
+
+  const handleChange = (event) => {
+    setIdentifier(event.target.value);
+
+    // پاک کردن پیام‌های قبلی هنگام تایپ
+    if (error) {
+      setError("");
+    }
+
+    if (message) {
+      setMessage("");
+    }
+  };
+
+  // ======================================================
+  // ارسال درخواست بازیابی
+  // ======================================================
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
     setMessage("");
     setError("");
 
     const value = identifier.trim();
 
+    // -----------------------------
+    // خالی بودن
+    // -----------------------------
+
     if (!value) {
-      setError("لطفاً ایمیل یا شماره موبایل خود را وارد کنید.");
+      setError(
+        "لطفاً ایمیل یا شماره موبایل خود را وارد کنید."
+      );
       return;
     }
 
+    // -----------------------------
+    // تشخیص شماره موبایل
+    // -----------------------------
+
     const isPhone = /^09\d{9}$/.test(value);
+
+    // -----------------------------
+    // تشخیص ایمیل
+    // -----------------------------
 
     const isEmail =
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+    // -----------------------------
+    // اعتبارسنجی
+    // -----------------------------
 
     if (!isPhone && !isEmail) {
       setError(
@@ -37,98 +76,168 @@ function ForgotPassword() {
     try {
       setLoading(true);
 
+      // -----------------------------
+      // ارسال به Backend
+      // -----------------------------
+
       const response = await axios.post(
         "http://localhost:5000/api/auth/forgot-password",
         {
-          identifier: isEmail ? value.toLowerCase() : value,
+          identifier: isEmail
+            ? value.toLowerCase()
+            : value,
         }
       );
 
+      // -----------------------------
+      // موفقیت
+      // -----------------------------
+
       setMessage(
         response.data?.message ||
-          "اگر اطلاعات واردشده در سیستم ثبت شده باشد، لینک بازیابی ارسال خواهد شد."
+          "لینک بازیابی رمز عبور ارسال شد."
       );
 
       setIdentifier("");
     } catch (err) {
-      console.error("Forgot password error:", err);
-
-      setError(
-        err.response?.data?.message ||
-          "درخواست بازیابی رمز با خطا مواجه شد."
+      console.error(
+        "Forgot password error:",
+        err
       );
+
+      // -----------------------------
+      // خطای Backend
+      // -----------------------------
+
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.request) {
+        setError(
+          "ارتباط با سرور برقرار نشد. لطفاً روشن بودن Backend را بررسی کنید."
+        );
+      } else {
+        setError(
+          "درخواست بازیابی رمز عبور با خطا مواجه شد."
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // ======================================================
+  // UI
+  // ======================================================
+
   return (
-    <div
+    <section
       dir="rtl"
-      className="min-h-[calc(100vh-160px)] bg-gray-50 flex items-center justify-center px-4 py-12"
+      className="flex min-h-[calc(100vh-160px)] items-center justify-center bg-gray-50 px-4 py-12"
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-md">
-        <h1 className="text-center text-2xl font-bold text-gray-900">
-          فراموشی رمز عبور
-        </h1>
+      <div className="w-full max-w-md">
+        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
 
-        <p className="mt-3 mb-6 text-center text-sm text-gray-500">
-          ایمیل یا شماره موبایل حساب کاربری خود را وارد کنید.
-        </p>
+          {/* ==================================================
+              Header
+          ================================================== */}
 
-        {message && (
-          <div className="mb-4 rounded-lg bg-green-100 p-3 text-sm text-green-700">
-            {message}
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-2xl text-green-700">
+              🔑
+            </div>
+
+            <h1 className="text-3xl font-black text-gray-900">
+              فراموشی رمز عبور
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-gray-500">
+              ایمیل یا شماره موبایل حساب کاربری خود را وارد کنید.
+            </p>
           </div>
-        )}
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">
-            {error}
+          {/* ==================================================
+              Success Message
+          ================================================== */}
+
+          {message && (
+            <div className="mb-5 rounded-2xl bg-green-50 p-4 text-center text-sm font-bold leading-6 text-green-700">
+              {message}
+            </div>
+          )}
+
+          {/* ==================================================
+              Error Message
+          ================================================== */}
+
+          {error && (
+            <div className="mb-5 rounded-2xl bg-red-50 p-4 text-center text-sm font-bold leading-6 text-red-600">
+              {error}
+            </div>
+          )}
+
+          {/* ==================================================
+              Form
+          ================================================== */}
+
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+          >
+            {/* Identifier */}
+
+            <div>
+              <label
+                htmlFor="identifier"
+                className="mb-2 block text-sm font-bold text-gray-700"
+              >
+                ایمیل یا شماره موبایل
+              </label>
+
+              <input
+                id="identifier"
+                name="identifier"
+                type="text"
+                value={identifier}
+                onChange={handleChange}
+                placeholder="09123456789 یا example@gmail.com"
+                disabled={loading}
+                autoComplete="username"
+                dir="ltr"
+                className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+              />
+            </div>
+
+            {/* Submit */}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading
+                ? "در حال ارسال..."
+                : "ارسال لینک بازیابی"}
+            </button>
+          </form>
+
+          {/* ==================================================
+              Back To Login
+          ================================================== */}
+
+          <div className="mt-6 text-center text-sm text-gray-500">
+            رمز عبورتان را به یاد آوردید؟
+
+            <Link
+              to="/login"
+              className="mr-2 font-bold text-green-700 transition hover:text-green-800"
+            >
+              ورود به حساب
+            </Link>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit}>
-          <label
-            htmlFor="identifier"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            ایمیل یا شماره موبایل
-          </label>
-
-          <input
-            id="identifier"
-            name="identifier"
-            type="text"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="09123456789 یا example@email.com"
-            disabled={loading}
-            autoComplete="username"
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-gray-900"
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-4 w-full rounded-lg bg-gray-900 py-3 text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading
-              ? "در حال بررسی..."
-              : "بازیابی رمز عبور"}
-          </button>
-        </form>
-
-        <div className="mt-5 text-center">
-          <Link
-            to="/login"
-            className="text-sm text-gray-600 hover:text-gray-900"
-          >
-            بازگشت به صفحه ورود
-          </Link>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
