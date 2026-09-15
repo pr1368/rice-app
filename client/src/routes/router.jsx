@@ -11,12 +11,22 @@ import Contact from "../pages/Contact/Contact";
 import Cart from "../pages/Cart/Cart";
 import Checkout from "../pages/Checkout/Checkout";
 import OrderReview from "../pages/OrderReview/OrderReview";
+import OrderSuccess from "../pages/Order/OrderSuccess";
 import NotFound from "../pages/NotFound/NotFound";
 
 // Authentication
 import Register from "../pages/Authentication/Register/Register";
 import Login from "../pages/Authentication/Login/Login";
 import Profile from "../pages/Authentication/Profile/Profile";
+import EditProfile from "../pages/Authentication/Profile/EditProfile";
+
+// Password Reset
+import ForgotPassword from "../pages/Authentication/ForgotPassword/ForgotPassword";
+import ResetPassword from "../pages/Authentication/ResetPassword/ResetPassword";
+
+// Orders
+import Orders from "../pages/Order/Orders";
+import OrderDetails from "../pages/Order/OrderDetails";
 
 // Auth Protection
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -61,6 +71,10 @@ const router = createBrowserRouter([
         element: <Cart />,
       },
 
+      // =========================
+      // Authentication
+      // =========================
+
       {
         path: "login",
         element: <Login />,
@@ -72,15 +86,35 @@ const router = createBrowserRouter([
       },
 
       // =========================
+      // Password Reset
+      // =========================
+
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />,
+      },
+
+      {
+        path: "reset-password/:token",
+        element: <ResetPassword />,
+      },
+
+      // =========================
       // Protected Routes
       // =========================
 
       {
         element: <ProtectedRoute />,
+
         children: [
           {
             path: "profile",
             element: <Profile />,
+          },
+
+          {
+            path: "profile/edit",
+            element: <EditProfile />,
           },
 
           {
@@ -89,8 +123,23 @@ const router = createBrowserRouter([
           },
 
           {
+            path: "orders",
+            element: <Orders />,
+          },
+
+          {
+            path: "orders/:id",
+            element: <OrderDetails />,
+          },
+
+          {
             path: "order-review",
             element: <OrderReview />,
+          },
+
+          {
+            path: "order-success",
+            element: <OrderSuccess />,
           },
         ],
       },

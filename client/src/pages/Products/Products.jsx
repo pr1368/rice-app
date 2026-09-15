@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+
 import Container from "../../components/ui/Container";
 import SectionTitle from "../../components/ui/SectionTitle";
 import ProductGrid from "../../components/product/ProductGrid";
+
 import { getProducts } from "../../services/productService";
 
 const Products = () => {
+  const [searchParams] = useSearchParams();
+
+  const category = searchParams.get("category");
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -12,10 +19,21 @@ const Products = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
+        setError("");
+
         const data = await getProducts();
-        setProducts(data.products);
+        const allProducts = data.products || [];
+
+        const filteredProducts = category
+          ? allProducts.filter(
+              (product) => product.category === category
+            )
+          : allProducts;
+
+        setProducts(filteredProducts);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Products error:", error);
         setError("دریافت محصولات با خطا مواجه شد.");
       } finally {
         setLoading(false);
@@ -23,51 +41,41 @@ const Products = () => {
     };
 
     fetchProducts();
-  }, []);
-
-  if (loading) {
-    return (
-      <section>
-        <Container>
-          <SectionTitle
-            title="همه محصولات"
-            subtitle="خرید مستقیم از شالیزار"
-          />
-
-          <p className="py-10 text-center">
-            در حال دریافت محصولات...
-          </p>
-        </Container>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section>
-        <Container>
-          <SectionTitle
-            title="همه محصولات"
-            subtitle="خرید مستقیم از شالیزار"
-          />
-
-          <p className="py-10 text-center text-red-500">
-            {error}
-          </p>
-        </Container>
-      </section>
-    );
-  }
+  }, [category]);
 
   return (
-    <section>
+    <section className="py-16">
       <Container>
         <SectionTitle
-          title="همه محصولات"
-          subtitle="خرید مستقیم از شالیزار"
+          title={category ? category : "همه محصولات"}
+          subtitle={
+            category
+              ? `محصولات دسته ${category}`
+              : "خرید مستقیم از شالیزار"
+          }
         />
 
-        <ProductGrid products={products} />
+        {loading && (
+          <div className="py-20 text-center text-gray-500">
+            در حال دریافت محصولات...
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="rounded-2xl bg-red-50 p-6 text-center text-red-600">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && products.length === 0 && (
+          <div className="py-20 text-center text-gray-500">
+            محصولی در این دسته پیدا نشد.
+          </div>
+        )}
+
+        {!loading && !error && products.length > 0 && (
+          <ProductGrid products={products} />
+        )}
       </Container>
     </section>
   );

@@ -25,30 +25,10 @@ function ProductDetails() {
 
         const data = await getProductById(id);
 
-        const apiProduct = data.product;
+        setProduct(data.product);
+      } catch (err) {
+        console.error("Product details error:", err);
 
-        if (!apiProduct) {
-          setError("محصول پیدا نشد");
-          return;
-        }
-
-        // تبدیل ساختار MongoDB به ساختار مورد انتظار کامپوننت‌های فعلی
-        const normalizedProduct = {
-          ...apiProduct,
-
-          // MongoDB
-          id: apiProduct._id,
-
-          // name در API → title در UI
-          title: apiProduct.name,
-
-          // موجودی عددی → وضعیت موجودی
-          stock: apiProduct.stock > 0,
-        };
-
-        setProduct(normalizedProduct);
-      } catch (error) {
-        console.error("Error fetching product:", error);
         setError("دریافت اطلاعات محصول با خطا مواجه شد.");
       } finally {
         setLoading(false);
@@ -58,48 +38,41 @@ function ProductDetails() {
     fetchProduct();
   }, [id]);
 
-  // Loading
   if (loading) {
     return (
-      <section>
-        <Container>
-          <div className="py-20 text-center">
-            <p className="text-lg text-gray-500">
-              در حال دریافت اطلاعات محصول...
-            </p>
-          </div>
-        </Container>
-      </section>
+      <Container className="py-20">
+        <div className="text-center text-lg text-gray-500">
+          در حال دریافت اطلاعات محصول...
+        </div>
+      </Container>
     );
   }
 
-  // Error / Not Found
   if (error || !product) {
     return (
-      <section>
-        <Container>
-          <div className="py-20 text-center">
-            <h2 className="text-2xl font-bold text-gray-800">
-              {error || "محصول پیدا نشد"}
-            </h2>
-          </div>
-        </Container>
-      </section>
+      <Container className="py-20">
+        <h2 className="text-center text-3xl font-bold text-red-600">
+          {error || "محصول پیدا نشد"}
+        </h2>
+      </Container>
     );
   }
 
   return (
-    <section>
+    <section className="py-16">
       <Container>
+        {/* Product Main Section */}
         <div className="grid gap-16 lg:grid-cols-2">
           <ProductGallery product={product} />
 
           <ProductInfo product={product} />
         </div>
 
+        {/* Product Tabs */}
         <ProductTabs product={product} />
 
-        <SimilarProducts currentId={product.id} />
+        {/* Similar Products */}
+        <SimilarProducts currentId={product._id} />
       </Container>
     </section>
   );

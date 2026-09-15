@@ -1,13 +1,31 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api/products";
+import api from "./api";
 
 export const getProducts = async () => {
-  const response = await axios.get(API_URL);
+  const response = await api.get("/products");
+
   return response.data;
 };
 
 export const getProductById = async (id) => {
-  const response = await axios.get(`${API_URL}/${id}`);
+  const response = await api.get(`/products/${id}`);
+
+  return response.data;
+};
+
+export const createProduct = async (productData) => {
+  const response = await api.post("/products", productData);
+
+  return response.data;
+};
+
+export const updateProduct = async (id, productData) => {
+  const response = await api.put(`/products/${id}`, productData);
+
+  return response.data;
+};
+
+export const deleteProduct = async (id) => {
+  const response = await api.delete(`/products/${id}`);
+
   return response.data;
 };

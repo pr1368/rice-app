@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 function ProductTabs({ product }) {
-
   const tabs = [
     {
       id: "description",
@@ -17,29 +16,24 @@ function ProductTabs({ product }) {
     },
   ];
 
-
-  const [activeTab, setActiveTab] = useState(
-    "description"
-  );
-
+  const [activeTab, setActiveTab] = useState("description");
 
   return (
     <div className="mt-20">
-
       {/* Tabs Header */}
-
-      <div className="
-        flex
-        flex-wrap
-        gap-4
-        border-b
-        border-gray-200
-      ">
-
+      <div
+        className="
+          flex
+          flex-wrap
+          gap-4
+          border-b
+          border-gray-200
+        "
+      >
         {tabs.map((tab) => (
-
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveTab(tab.id)}
             className={`
               px-6
@@ -55,33 +49,25 @@ function ProductTabs({ product }) {
           >
             {tab.title}
           </button>
-
         ))}
-
       </div>
 
-
       {/* Content */}
-
-      <div className="py-8 text-gray-600 leading-9">
-
-
+      <div className="py-8 text-gray-600">
+        {/* Description */}
         {activeTab === "description" && (
-
-          <p>
-            {product.description}
-          </p>
-
+          <div className="rounded-3xl bg-gray-50 p-6">
+            <p className="leading-9">
+              {product.description || "توضیحاتی برای این محصول ثبت نشده است."}
+            </p>
+          </div>
         )}
 
-
-
+        {/* Features */}
         {activeTab === "features" && (
-
-          <div className="grid gap-4 md:grid-cols-2">
-
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Feature
-              title="مبدا"
+              title="مبدأ"
               value={product.province}
             />
 
@@ -91,8 +77,8 @@ function ProductTabs({ product }) {
             />
 
             <Feature
-              title="وزن"
-              value={product.weight}
+              title="نوع برنج"
+              value={product.riceType}
             />
 
             <Feature
@@ -100,65 +86,87 @@ function ProductTabs({ product }) {
               value={product.harvest}
             />
 
-          </div>
+            <Feature
+              title="میزان عطر"
+              value={product.aroma}
+            />
 
+            <Feature
+              title="زمان پخت"
+              value={
+                product.cookingTime
+                  ? `${product.cookingTime} دقیقه`
+                  : ""
+              }
+            />
+
+            <Feature
+              title="وزن"
+              value={
+                product.weight
+                  ? `${product.weight} کیلوگرم`
+                  : ""
+              }
+            />
+
+            <Feature
+              title="دسته‌بندی"
+              value={product.category}
+            />
+
+            <Feature
+              title="موجودی"
+              value={
+                Number(product.stock) > 0
+                  ? `${product.stock} عدد`
+                  : "ناموجود"
+              }
+            />
+          </div>
         )}
 
-
-
+        {/* Reviews */}
         {activeTab === "reviews" && (
-
-          <div className="
-            rounded-2xl
-            bg-gray-50
-            p-8
-            text-center
-          ">
-
-            <p>
+          <div
+            className="
+              rounded-3xl
+              bg-gray-50
+              p-8
+              text-center
+            "
+          >
+            <p className="text-lg">
               هنوز نظری ثبت نشده است.
             </p>
-
           </div>
-
         )}
-
-
       </div>
-
     </div>
   );
 }
 
-
-
-function Feature({
-  title,
-  value,
-}) {
-
+function Feature({ title, value }) {
   return (
-    <div className="
-      flex
-      justify-between
-      rounded-2xl
-      bg-gray-50
-      p-5
-    ">
-
+    <div
+      className="
+        flex
+        items-center
+        justify-between
+        gap-4
+        rounded-2xl
+        bg-gray-50
+        p-5
+      "
+    >
       <span className="text-gray-500">
         {title}
       </span>
 
-
       <span className="font-bold text-gray-800">
-        {value}
+        {value || "ثبت نشده"}
       </span>
-
     </div>
   );
-
 }
-
 
 export default ProductTabs;

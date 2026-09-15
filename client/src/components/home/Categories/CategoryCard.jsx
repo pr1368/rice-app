@@ -4,13 +4,14 @@ import Card from "../../ui/Card";
 
 const CategoryCard = ({ title, image }) => {
   return (
-    <Link to="/products">
+    <Link
+      to={`/products?category=${encodeURIComponent(title)}`}
+    >
       <Card
         padding={false}
         className="group overflow-hidden cursor-pointer"
       >
         <div className="relative h-72 overflow-hidden">
-
           <img
             src={image}
             alt={title}
@@ -22,7 +23,6 @@ const CategoryCard = ({ title, image }) => {
           <h3 className="absolute bottom-6 right-6 text-3xl font-bold text-white">
             {title}
           </h3>
-
         </div>
       </Card>
     </Link>

@@ -6,7 +6,12 @@ import { useAuth } from "../../../context/AuthContext";
 
 function Register() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+
+  const {
+    register,
+    loading,
+    error: authError,
+  } = useAuth();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -41,8 +46,7 @@ function Register() {
     }
 
     if (!formData.lastName.trim()) {
-      newErrors.lastName =
-        "نام خانوادگی را وارد کنید.";
+      newErrors.lastName = "نام خانوادگی را وارد کنید.";
     }
 
     if (!/^09\d{9}$/.test(formData.phone)) {
@@ -55,8 +59,7 @@ function Register() {
         formData.email
       )
     ) {
-      newErrors.email =
-        "ایمیل معتبر وارد کنید.";
+      newErrors.email = "ایمیل معتبر وارد کنید.";
     }
 
     if (formData.password.length < 6) {
@@ -65,8 +68,7 @@ function Register() {
     }
 
     if (
-      formData.password !==
-      formData.confirmPassword
+      formData.password !== formData.confirmPassword
     ) {
       newErrors.confirmPassword =
         "تکرار رمز عبور با رمز عبور مطابقت ندارد.";
@@ -77,29 +79,33 @@ function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    const newUser = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      phone: formData.phone,
-      email: formData.email,
-    };
+    try {
+      await register({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+      });
 
-    login(newUser);
-
-    navigate("/profile");
+      navigate("/profile", {
+        replace: true,
+      });
+    } catch (error) {
+      // خطا داخل AuthContext مدیریت می‌شود
+    }
   };
 
   return (
     <section className="min-h-[calc(100vh-80px)] bg-gray-50 py-16">
       <div className="mx-auto max-w-xl px-4">
-
         <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
 
           <div className="mb-8 text-center">
@@ -116,15 +122,21 @@ function Register() {
             </p>
           </div>
 
+          {authError && (
+            <div className="mb-5 rounded-2xl bg-red-50 p-4 text-center text-sm font-bold leading-6 text-red-600">
+              {authError}
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit}
             className="space-y-5"
           >
             <div className="grid gap-5 sm:grid-cols-2">
-
               <AuthInput
                 label="نام"
                 name="firstName"
+                type="text"
                 value={formData.firstName}
                 onChange={handleChange}
                 placeholder="نام"
@@ -134,12 +146,12 @@ function Register() {
               <AuthInput
                 label="نام خانوادگی"
                 name="lastName"
+                type="text"
                 value={formData.lastName}
                 onChange={handleChange}
                 placeholder="نام خانوادگی"
                 error={errors.lastName}
               />
-
             </div>
 
             <AuthInput
@@ -184,9 +196,12 @@ function Register() {
 
             <button
               type="submit"
-              className="w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800"
+              disabled={loading}
+              className="w-full rounded-2xl bg-green-700 px-6 py-4 font-bold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              ایجاد حساب
+              {loading
+                ? "در حال ایجاد حساب..."
+                : "ایجاد حساب"}
             </button>
           </form>
 
