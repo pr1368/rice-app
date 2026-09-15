@@ -9,16 +9,34 @@ import { sendPasswordResetEmail } from "../utils/email.js";
 // JWT
 // ======================================================
 
-const generateToken = (userId) => {
+const generateToken = (userId, role) => {
   return jwt.sign(
     {
       userId,
+      role,
     },
     process.env.JWT_SECRET,
     {
       expiresIn: "7d",
     }
   );
+};
+
+// ======================================================
+// User Response
+// ======================================================
+
+const getUserResponse = (user) => {
+  return {
+    id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    email: user.email,
+    address: user.address,
+    postalCode: user.postalCode,
+    role: user.role,
+  };
 };
 
 // ======================================================
@@ -52,7 +70,6 @@ export const register = async (req, res) => {
     }
 
     const normalizedPhone = phone.trim();
-
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!/^09\d{9}$/.test(normalizedPhone)) {
@@ -111,24 +128,16 @@ export const register = async (req, res) => {
       password: hashedPassword,
       address: address.trim(),
       postalCode: postalCode.trim(),
+      role: "user",
     });
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id.toString(), user.role);
 
     return res.status(201).json({
       success: true,
       message: "ثبت‌نام با موفقیت انجام شد.",
       token,
-
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        email: user.email,
-        address: user.address,
-        postalCode: user.postalCode,
-      },
+      user: getUserResponse(user),
     });
   } catch (error) {
     console.error("Register error:", error);
@@ -156,7 +165,7 @@ export const register = async (req, res) => {
 
 // ======================================================
 // POST /api/auth/login
-// ورود
+// ورود کاربر
 // ======================================================
 
 export const login = async (req, res) => {
@@ -170,10 +179,11 @@ export const login = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({
-      phone: phone.trim(),
-    }).select("+password");
+    const normalizedPhone = phone.trim();
 
+    const user = await User.findOne({
+      phone: normalizedPhone,
+    }).select("+password");
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -193,22 +203,16 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(
+      user._id.toString(),
+      user.role || "user"
+    );
 
     return res.status(200).json({
       success: true,
       message: "ورود با موفقیت انجام شد.",
       token,
-
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        email: user.email,
-        address: user.address,
-        postalCode: user.postalCode,
-      },
+      user: getUserResponse(user),
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -216,6 +220,76 @@ export const login = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "ورود با خطا مواجه شد.",
+    });
+  }
+};
+
+// ======================================================
+// POST /api/auth/admin-login
+// ورود مدیر
+// ======================================================
+
+export const adminLogin = async (req, res) => {
+  try {
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "شماره موبایل و رمز عبور الزامی هستند.",
+      });
+    }
+
+    const normalizedPhone = phone.trim();
+
+    const user = await User.findOne({
+      phone: normalizedPhone,
+    }).select("+password");
+console.log("ADMIN USER:", user);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "اطلاعات ورود مدیر نادرست است.",
+      });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        success: false,
+        message: "اطلاعات ورود مدیر نادرست است.",
+      });
+    }
+
+    if (user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "شما دسترسی ورود به پنل مدیریت را ندارید.",
+      });
+    }
+
+    const token = generateToken(
+      user._id.toString(),
+      user.role
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "ورود مدیر با موفقیت انجام شد.",
+      token,
+      user: getUserResponse(user),
+    });
+  } catch (error) {
+    console.error("Admin login error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "ورود به پنل مدیریت با خطا مواجه شد.",
     });
   }
 };
@@ -238,16 +312,7 @@ export const getMe = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        email: user.email,
-        address: user.address,
-        postalCode: user.postalCode,
-      },
+      user: getUserResponse(user),
     });
   } catch (error) {
     console.error("Get me error:", error);
@@ -328,8 +393,7 @@ export const forgotPassword = async (req, res) => {
     if (!user.email) {
       return res.status(400).json({
         success: false,
-        message:
-          "برای این حساب ایمیل ثبت نشده است.",
+        message: "برای این حساب ایمیل ثبت نشده است.",
       });
     }
 
@@ -379,16 +443,13 @@ export const forgotPassword = async (req, res) => {
     console.log("SMTP USER:", process.env.SMTP_USER);
     console.log(
       "SMTP PASS:",
-      process.env.SMTP_PASS
-        ? "SET"
-        : "NOT SET"
+      process.env.SMTP_PASS ? "SET" : "NOT SET"
     );
     console.log("======================================");
     console.log("");
 
     // --------------------------------------------------
     // ارسال ایمیل
-    // فقط از utils/email.js
     // --------------------------------------------------
 
     const info = await sendPasswordResetEmail({
@@ -479,7 +540,6 @@ export const resetPassword = async (req, res) => {
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
-
       resetPasswordExpires: {
         $gt: new Date(),
       },
@@ -517,8 +577,7 @@ export const resetPassword = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message:
-        "رمز عبور با موفقیت تغییر کرد.",
+      message: "رمز عبور با موفقیت تغییر کرد.",
     });
   } catch (error) {
     console.error(

@@ -3,6 +3,7 @@ import express from "express";
 import {
   register,
   login,
+  adminLogin,
   getMe,
   forgotPassword,
   resetPassword,
@@ -19,8 +20,11 @@ const router = express.Router();
 // ثبت نام
 router.post("/register", register);
 
-// ورود
+// ورود کاربر
 router.post("/login", login);
+
+// ورود مدیر
+router.post("/admin-login", adminLogin);
 
 // =========================
 // Password Reset

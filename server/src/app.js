@@ -8,21 +8,41 @@ import router from "./routes/index.js";
 
 const app = express();
 
+// ======================================================
+// CORS
+// ======================================================
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
 
+// ======================================================
+// Middleware
+// ======================================================
+
 app.use(express.json());
-
 app.use(cookieParser());
-
 app.use(compression());
 
-
+// ======================================================
 // Root
+// ======================================================
+
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -30,8 +50,10 @@ app.get("/", (req, res) => {
   });
 });
 
-
+// ======================================================
 // Health
+// ======================================================
+
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -39,16 +61,22 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-
+// ======================================================
 // General routes
+// ======================================================
+
 app.use("/api", router);
 
-
+// ======================================================
 // Product routes
+// ======================================================
+
 app.use("/api/products", productRoutes);
 
-
+// ======================================================
 // Error handler
+// ======================================================
+
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
 
