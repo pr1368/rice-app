@@ -5,6 +5,7 @@ import {
   login,
   adminLogin,
   getMe,
+  updateProfile,
   forgotPassword,
   resetPassword,
 } from "../controllers/authController.js";
@@ -13,9 +14,9 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// =========================
+// ======================================================
 // Authentication
-// =========================
+// ======================================================
 
 // ثبت نام
 router.post("/register", register);
@@ -26,9 +27,27 @@ router.post("/login", login);
 // ورود مدیر
 router.post("/admin-login", adminLogin);
 
-// =========================
+// ======================================================
+// Profile
+// ======================================================
+
+// اطلاعات کاربر فعلی
+router.get(
+  "/me",
+  authMiddleware,
+  getMe
+);
+
+// ویرایش پروفایل
+router.put(
+  "/profile",
+  authMiddleware,
+  updateProfile
+);
+
+// ======================================================
 // Password Reset
-// =========================
+// ======================================================
 
 // درخواست بازیابی رمز
 router.post(
@@ -40,17 +59,6 @@ router.post(
 router.post(
   "/reset-password/:token",
   resetPassword
-);
-
-// =========================
-// Protected
-// =========================
-
-// اطلاعات کاربر فعلی
-router.get(
-  "/me",
-  authMiddleware,
-  getMe
 );
 
 export default router;

@@ -3,7 +3,10 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
 import User from "../models/User.js";
-import { sendPasswordResetEmail } from "../utils/email.js";
+
+import {
+  sendPasswordResetEmail,
+} from "../utils/email.js";
 
 // ======================================================
 // JWT
@@ -23,23 +26,6 @@ const generateToken = (userId, role) => {
 };
 
 // ======================================================
-// User Response
-// ======================================================
-
-const getUserResponse = (user) => {
-  return {
-    id: user._id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    phone: user.phone,
-    email: user.email,
-    address: user.address,
-    postalCode: user.postalCode,
-    role: user.role,
-  };
-};
-
-// ======================================================
 // POST /api/auth/register
 // ثبت نام
 // ======================================================
@@ -56,6 +42,10 @@ export const register = async (req, res) => {
       postalCode = "",
     } = req.body;
 
+    // -----------------------------------------------
+    // بررسی فیلدهای ضروری
+    // -----------------------------------------------
+
     if (
       !firstName ||
       !lastName ||
@@ -65,58 +55,106 @@ export const register = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "لطفاً تمام اطلاعات ضروری را وارد کنید.",
+        message:
+          "لطفاً تمام اطلاعات ضروری را وارد کنید.",
       });
     }
+
+    // -----------------------------------------------
+    // Normalize
+    // -----------------------------------------------
+
+    const normalizedFirstName =
+      firstName.trim();
+
+    const normalizedLastName =
+      lastName.trim();
 
     const normalizedPhone = phone.trim();
+
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!/^09\d{9}$/.test(normalizedPhone)) {
+    // -----------------------------------------------
+    // Validation
+    // -----------------------------------------------
+
+    if (!normalizedFirstName) {
       return res.status(400).json({
         success: false,
-        message: "شماره موبایل معتبر نیست.",
+        message: "نام را وارد کنید.",
       });
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    if (!normalizedLastName) {
       return res.status(400).json({
         success: false,
-        message: "ایمیل معتبر نیست.",
+        message:
+          "نام خانوادگی را وارد کنید.",
+      });
+    }
+
+    if (!isValidPhone(normalizedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "شماره موبایل باید ۱۱ رقم و با 09 شروع شود.",
+      });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "ایمیل معتبر وارد کنید.",
       });
     }
 
     if (password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "رمز عبور باید حداقل ۶ کاراکتر باشد.",
+        message:
+          "رمز عبور باید حداقل ۶ کاراکتر باشد.",
       });
     }
 
-    const existingUser = await User.findOne({
-      $or: [
-        {
-          phone: normalizedPhone,
-        },
-        {
-          email: normalizedEmail,
-        },
-      ],
-    });
+    // -----------------------------------------------
+    // بررسی کاربر موجود
+    // -----------------------------------------------
+
+    const existingUser =
+      await User.findOne({
+        $or: [
+          {
+            phone: normalizedPhone,
+          },
+          {
+            email: normalizedEmail,
+          },
+        ],
+      });
 
     if (existingUser) {
-      if (existingUser.phone === normalizedPhone) {
+      if (
+        existingUser.phone ===
+        normalizedPhone
+      ) {
         return res.status(409).json({
           success: false,
-          message: "این شماره موبایل قبلاً ثبت شده است.",
+          message:
+            "این شماره موبایل قبلاً ثبت شده است.",
         });
       }
 
       return res.status(409).json({
         success: false,
-        message: "این ایمیل قبلاً ثبت شده است.",
+        message:
+          "این ایمیل قبلاً ثبت شده است.",
       });
     }
+
+    // -----------------------------------------------
+    // Hash password
+    // -----------------------------------------------
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -128,24 +166,37 @@ export const register = async (req, res) => {
       password: hashedPassword,
       address: address.trim(),
       postalCode: postalCode.trim(),
-      role: "user",
     });
 
-    const token = generateToken(user._id.toString(), user.role);
+    const token = generateToken(user._id);
 
     return res.status(201).json({
       success: true,
-      message: "ثبت‌نام با موفقیت انجام شد.",
+      message:
+        "ثبت‌نام با موفقیت انجام شد.",
       token,
-      user: getUserResponse(user),
+
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        email: user.email,
+        address: user.address,
+        postalCode: user.postalCode,
+      },
     });
   } catch (error) {
-    console.error("Register error:", error);
+    console.error(
+      "Register error:",
+      error
+    );
 
     if (error.code === 11000) {
-      const duplicateField = Object.keys(
-        error.keyPattern || {}
-      )[0];
+      const duplicateField =
+        Object.keys(
+          error.keyPattern || {}
+        )[0];
 
       return res.status(409).json({
         success: false,
@@ -158,7 +209,8 @@ export const register = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "ثبت‌نام با خطا مواجه شد.",
+      message:
+        "ثبت‌نام با خطا مواجه شد.",
     });
   }
 };
@@ -170,56 +222,73 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    const {
+      phone,
+      password,
+    } = req.body;
 
     if (!phone || !password) {
       return res.status(400).json({
         success: false,
-        message: "شماره موبایل و رمز عبور الزامی هستند.",
+        message:
+          "شماره موبایل و رمز عبور الزامی هستند.",
       });
     }
 
-    const normalizedPhone = phone.trim();
-
     const user = await User.findOne({
-      phone: normalizedPhone,
+      phone: phone.trim(),
     }).select("+password");
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "شماره موبایل یا رمز عبور اشتباه است.",
+        message:
+          "شماره موبایل یا رمز عبور اشتباه است.",
       });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isPasswordCorrect =
+      await bcrypt.compare(
+        password,
+        user.password
+      );
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
         success: false,
-        message: "شماره موبایل یا رمز عبور اشتباه است.",
+        message:
+          "شماره موبایل یا رمز عبور اشتباه است.",
       });
     }
 
-    const token = generateToken(
-      user._id.toString(),
-      user.role || "user"
-    );
+    const token = generateToken(user._id);
 
     return res.status(200).json({
       success: true,
-      message: "ورود با موفقیت انجام شد.",
+      message:
+        "ورود با موفقیت انجام شد.",
       token,
-      user: getUserResponse(user),
+
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        email: user.email,
+        address: user.address,
+        postalCode: user.postalCode,
+      },
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error(
+      "Login error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "ورود با خطا مواجه شد.",
+      message:
+        "ورود با خطا مواجه شد.",
     });
   }
 };
@@ -299,39 +368,123 @@ console.log("ADMIN USER:", user);
 // اطلاعات کاربر فعلی
 // ======================================================
 
-export const getMe = async (req, res) => {
+export const getMe = async (
+  req,
+  res
+) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user =
+      await User.findById(
+        req.user.userId
+      );
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "کاربر پیدا نشد.",
+        message:
+          "کاربر پیدا نشد.",
       });
     }
 
     return res.status(200).json({
       success: true,
-      user: getUserResponse(user),
+
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        email: user.email,
+        address: user.address,
+        postalCode: user.postalCode,
+      },
     });
   } catch (error) {
-    console.error("Get me error:", error);
+    console.error("");
+    console.error(
+      "======================================"
+    );
+    console.error(
+      "UPDATE PROFILE ERROR"
+    );
+    console.error(
+      "CODE:",
+      error.code
+    );
+    console.error(
+      "MESSAGE:",
+      error.message
+    );
+    console.error(
+      "KEY VALUE:",
+      error.keyValue
+    );
+    console.error(
+      "======================================"
+    );
+    console.error("");
+
+    // -----------------------------------------------
+    // Duplicate MongoDB
+    // -----------------------------------------------
+
+    if (error.code === 11000) {
+      const duplicateField =
+        Object.keys(
+          error.keyPattern || {}
+        )[0];
+
+      if (
+        duplicateField ===
+        "phone"
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "این شماره موبایل قبلاً ثبت شده است.",
+        });
+      }
+
+      if (
+        duplicateField ===
+        "email"
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "این ایمیل قبلاً ثبت شده است.",
+        });
+      }
+
+      return res.status(409).json({
+        success: false,
+        message:
+          "اطلاعات وارد شده تکراری است.",
+      });
+    }
 
     return res.status(500).json({
       success: false,
-      message: "دریافت اطلاعات کاربر با خطا مواجه شد.",
+      message:
+        "به‌روزرسانی پروفایل با خطا مواجه شد.",
     });
   }
 };
 
 // ======================================================
 // POST /api/auth/forgot-password
-// بازیابی رمز با ایمیل یا شماره موبایل
+// فراموشی رمز
+// ایمیل یا شماره موبایل
 // ======================================================
 
-export const forgotPassword = async (req, res) => {
+export const forgotPassword = async (
+  req,
+  res
+) => {
   try {
-    const { identifier } = req.body;
+    const {
+      identifier,
+    } = req.body;
 
     if (!identifier) {
       return res.status(400).json({
@@ -341,12 +494,16 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    const value = identifier.trim();
+    const value =
+      identifier.trim();
 
-    const isPhone = /^09\d{9}$/.test(value);
+    const isPhone =
+      isValidPhone(value);
 
     const isEmail =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      isValidEmail(
+        value
+      );
 
     if (!isPhone && !isEmail) {
       return res.status(400).json({
@@ -356,26 +513,27 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
+    // -----------------------------------------------
     // پیدا کردن کاربر
-    // --------------------------------------------------
+    // -----------------------------------------------
 
     let user;
 
     if (isPhone) {
-      user = await User.findOne({
-        phone: value,
-      }).select(
-        "+resetPasswordToken +resetPasswordExpires"
-      );
-    }
-
-    if (isEmail) {
-      user = await User.findOne({
-        email: value.toLowerCase(),
-      }).select(
-        "+resetPasswordToken +resetPasswordExpires"
-      );
+      user =
+        await User.findOne({
+          phone: value,
+        }).select(
+          "+resetPasswordToken +resetPasswordExpires"
+        );
+    } else {
+      user =
+        await User.findOne({
+          email:
+            value.toLowerCase(),
+        }).select(
+          "+resetPasswordToken +resetPasswordExpires"
+        );
     }
 
     if (!user) {
@@ -386,9 +544,9 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
+    // -----------------------------------------------
     // بررسی ایمیل
-    // --------------------------------------------------
+    // -----------------------------------------------
 
     if (!user.email) {
       return res.status(400).json({
@@ -397,30 +555,45 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
-    // ساخت Reset Token
-    // --------------------------------------------------
+    // -----------------------------------------------
+    // ساخت Token
+    // -----------------------------------------------
 
-    const resetToken = crypto
-      .randomBytes(32)
-      .toString("hex");
+    const resetToken =
+      crypto
+        .randomBytes(32)
+        .toString(
+          "hex"
+        );
 
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    const hashedToken =
+      crypto
+        .createHash(
+          "sha256"
+        )
+        .update(
+          resetToken
+        )
+        .digest(
+          "hex"
+        );
 
-    user.resetPasswordToken = hashedToken;
+    user.resetPasswordToken =
+      hashedToken;
 
-    user.resetPasswordExpires = new Date(
-      Date.now() + 15 * 60 * 1000
-    );
+    user.resetPasswordExpires =
+      new Date(
+        Date.now() +
+          15 *
+            60 *
+            1000
+      );
 
     await user.save();
 
-    // --------------------------------------------------
-    // ساخت لینک بازیابی
-    // --------------------------------------------------
+    // -----------------------------------------------
+    // Reset URL
+    // -----------------------------------------------
 
     const clientUrl =
       process.env.CLIENT_URL ||
@@ -429,45 +602,63 @@ export const forgotPassword = async (req, res) => {
     const resetUrl =
       `${clientUrl}/reset-password/${resetToken}`;
 
-    // --------------------------------------------------
-    // Debug
-    // --------------------------------------------------
-
     console.log("");
-    console.log("======================================");
-    console.log("PASSWORD RESET REQUEST");
-    console.log("User:", user._id);
-    console.log("Phone:", user.phone);
-    console.log("Email:", user.email);
-    console.log("Reset URL:", resetUrl);
-    console.log("SMTP USER:", process.env.SMTP_USER);
+    console.log(
+      "======================================"
+    );
+    console.log(
+      "PASSWORD RESET REQUEST"
+    );
+    console.log(
+      "User:",
+      user._id
+    );
+    console.log(
+      "Phone:",
+      user.phone
+    );
+    console.log(
+      "Email:",
+      user.email
+    );
+    console.log(
+      "Reset URL:",
+      resetUrl
+    );
     console.log(
       "SMTP PASS:",
-      process.env.SMTP_PASS ? "SET" : "NOT SET"
+      process.env.SMTP_PASS
+        ? "SET"
+        : "NOT SET"
     );
-    console.log("======================================");
     console.log("");
 
-    // --------------------------------------------------
+    // -----------------------------------------------
     // ارسال ایمیل
+    // فقط از utils/email.js
     // --------------------------------------------------
 
-    const info = await sendPasswordResetEmail({
+    await sendPasswordResetEmail({
       to: user.email,
-      firstName: user.firstName,
+      firstName:
+        user.firstName,
       resetUrl,
     });
 
-    // --------------------------------------------------
-    // موفقیت ارسال
-    // --------------------------------------------------
-
     console.log("");
-    console.log("======================================");
-    console.log("EMAIL SENT SUCCESSFULLY");
-    console.log("TO:", user.email);
-    console.log("MESSAGE ID:", info.messageId);
-    console.log("======================================");
+    console.log(
+      "======================================"
+    );
+    console.log(
+      "PASSWORD RESET EMAIL SENT"
+    );
+    console.log(
+      "TO:",
+      user.email
+    );
+    console.log(
+      "======================================"
+    );
     console.log("");
 
     return res.status(200).json({
@@ -477,12 +668,27 @@ export const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("");
-    console.error("======================================");
-    console.error("FORGOT PASSWORD ERROR");
-    console.error("CODE:", error.code);
-    console.error("COMMAND:", error.command);
-    console.error("MESSAGE:", error.message);
-    console.error("======================================");
+    console.error(
+      "======================================"
+    );
+    console.error(
+      "FORGOT PASSWORD ERROR"
+    );
+    console.error(
+      "CODE:",
+      error.code
+    );
+    console.error(
+      "COMMAND:",
+      error.command
+    );
+    console.error(
+      "MESSAGE:",
+      error.message
+    );
+    console.error(
+      "======================================"
+    );
     console.error("");
 
     return res.status(500).json({
@@ -498,22 +704,32 @@ export const forgotPassword = async (req, res) => {
 // تغییر رمز عبور
 // ======================================================
 
-export const resetPassword = async (req, res) => {
+export const resetPassword = async (
+  req,
+  res
+) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const {
+      token,
+    } = req.params;
+
+    const {
+      password,
+    } = req.body;
 
     if (!token) {
       return res.status(400).json({
         success: false,
-        message: "توکن بازیابی وجود ندارد.",
+        message:
+          "توکن بازیابی وجود ندارد.",
       });
     }
 
     if (!password) {
       return res.status(400).json({
         success: false,
-        message: "رمز عبور جدید را وارد کنید.",
+        message:
+          "رمز عبور جدید را وارد کنید.",
       });
     }
 
@@ -525,21 +741,29 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
-    // Hash کردن token دریافتی
-    // --------------------------------------------------
+    // -----------------------------------------------
+    // Hash token
+    // -----------------------------------------------
 
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const hashedToken =
+      crypto
+        .createHash(
+          "sha256"
+        )
+        .update(
+          token
+        )
+        .digest(
+          "hex"
+        );
 
-    // --------------------------------------------------
-    // پیدا کردن کاربر و بررسی انقضای token
-    // --------------------------------------------------
+    // -----------------------------------------------
+    // Find valid token
+    // -----------------------------------------------
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
+
       resetPasswordExpires: {
         $gt: new Date(),
       },
@@ -555,23 +779,29 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
-    // Hash کردن رمز جدید
-    // --------------------------------------------------
+    // -----------------------------------------------
+    // Hash new password
+    // -----------------------------------------------
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      12
-    );
+    const hashedPassword =
+      await bcrypt.hash(
+        password,
+        12
+      );
 
-    user.password = hashedPassword;
+    user.password =
+      hashedPassword;
 
-    // --------------------------------------------------
-    // باطل کردن token
-    // --------------------------------------------------
+    // -----------------------------------------------
+    // Invalidate reset token
+    // لینک فقط یک بار قابل استفاده است
+    // -----------------------------------------------
 
-    user.resetPasswordToken = null;
-    user.resetPasswordExpires = null;
+    user.resetPasswordToken =
+      null;
+
+    user.resetPasswordExpires =
+      null;
 
     await user.save();
 
