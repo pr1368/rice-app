@@ -20,70 +20,149 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
+      // درخواست‌های بدون Origin مثل Postman
+      if (!origin) {
+        return callback(null, true);
       }
 
-      callback(new Error("Not allowed by CORS"));
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error("Not allowed by CORS")
+      );
     },
+
     credentials: true,
   })
 );
 
 // ======================================================
-// Middleware
+// BODY PARSERS
 // ======================================================
 
-app.use(express.json());
+// JSON requests
+app.use(
+  express.json({
+    limit: "10mb",
+  })
+);
+
+// URL encoded requests
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "10mb",
+  })
+);
+
+// ======================================================
+// OTHER MIDDLEWARES
+// ======================================================
+
 app.use(cookieParser());
+
 app.use(compression());
 
 // ======================================================
-// Root
+// REQUEST DEBUG
+// ======================================================
+
+app.use((req, res, next) => {
+  console.log(
+    `${req.method} ${req.originalUrl}`
+  );
+
+  next();
+});
+
+// ======================================================
+// ROOT
 // ======================================================
 
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: "RiceShop API is running",
   });
 });
 
 // ======================================================
-// Health
+// HEALTH CHECK
 // ======================================================
 
 app.get("/api/health", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: "RiceShop API is running",
   });
 });
 
 // ======================================================
-// General routes
+// API ROUTES
 // ======================================================
 
 app.use("/api", router);
 
 // ======================================================
-// Product routes
+// PRODUCT ROUTES
 // ======================================================
 
-app.use("/api/products", productRoutes);
+app.use(
+  "/api/products",
+  productRoutes
+);
 
 // ======================================================
-// Error handler
+// 404 HANDLER
+// ======================================================
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "مسیر مورد نظر پیدا نشد.",
+    path: req.originalUrl,
+  });
+});
+
+// ======================================================
+// GLOBAL ERROR HANDLER
 // ======================================================
 
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
+  console.error("======================================");
+  console.error("GLOBAL SERVER ERROR");
+  console.error("NAME:", err.name);
+  console.error("MESSAGE:", err.message);
+  console.error("STACK:", err.stack);
+  console.error("======================================");
 
-  res.status(500).json({
+  // CORS error
+  if (err.message === "Not allowed by CORS") {
+    return res.status(403).json({
+      success: false,
+      message: "دسترسی به این Origin مجاز نیست.",
+    });
+  }
+
+  // Invalid JSON
+  if (
+    err instanceof SyntaxError &&
+    err.status === 400 &&
+    err.type === "entity.parse.failed"
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "فرمت JSON ارسال‌شده صحیح نیست.",
+    });
+  }
+
+  return res.status(500).json({
     success: false,
     message: "خطای داخلی سرور.",
   });
 });
 
 export default app;
+

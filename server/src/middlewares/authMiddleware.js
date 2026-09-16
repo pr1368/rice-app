@@ -56,9 +56,7 @@ const authMiddleware = async (req, res, next) => {
     // پیدا کردن کاربر
     // ============================================
 
-    const user = await User.findById(
-      decoded.userId
-    );
+    const user = await User.findById(decoded.userId);
 
     if (!user) {
       return res.status(401).json({
@@ -68,13 +66,10 @@ const authMiddleware = async (req, res, next) => {
     }
 
     // ============================================
-    // قرار دادن اطلاعات کاربر داخل request
+    // قرار دادن کاربر داخل request
     // ============================================
 
     req.user = user;
-
-    // برای سازگاری با Controllerهای فعلی
-    req.user.userId = user._id;
 
     // ============================================
     // ادامه درخواست
@@ -82,23 +77,11 @@ const authMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error(
-      "======================================"
-    );
-    console.error(
-      "AUTH MIDDLEWARE ERROR"
-    );
-    console.error(
-      "NAME:",
-      error.name
-    );
-    console.error(
-      "MESSAGE:",
-      error.message
-    );
-    console.error(
-      "======================================"
-    );
+    console.error("======================================");
+    console.error("AUTH MIDDLEWARE ERROR");
+    console.error("NAME:", error.name);
+    console.error("MESSAGE:", error.message);
+    console.error("======================================");
 
     return res.status(401).json({
       success: false,

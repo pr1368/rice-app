@@ -7,14 +7,11 @@ import Product from "../models/Product.js";
 // POST /api/orders
 // ایجاد سفارش
 // ======================================================
+
 export const createOrder = async (req, res) => {
   try {
     const userId = req.user._id;
-
-    const {
-      customer,
-      items,
-    } = req.body;
+    const { customer, items } = req.body;
 
     // -----------------------------
     // بررسی اطلاعات گیرنده
@@ -36,11 +33,11 @@ export const createOrder = async (req, res) => {
     } = customer;
 
     if (
-      !firstName ||
-      !lastName ||
-      !phone ||
-      !postalCode ||
-      !address
+      !firstName?.trim() ||
+      !lastName?.trim() ||
+      !phone?.trim() ||
+      !postalCode?.trim() ||
+      !address?.trim()
     ) {
       return res.status(400).json({
         success: false,
@@ -49,7 +46,7 @@ export const createOrder = async (req, res) => {
     }
 
     // -----------------------------
-    // بررسی محصولات
+    // بررسی محصولات سفارش
     // -----------------------------
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -60,18 +57,20 @@ export const createOrder = async (req, res) => {
     }
 
     const orderItems = [];
-
     let calculatedTotal = 0;
 
+    // محصولاتی که موجودی آنها رزرو شده است
+    const reservedItems = [];
+
     // -----------------------------
-    // بررسی هر محصول
+    // بررسی تک‌تک محصولات
     // -----------------------------
 
     for (const item of items) {
       if (!item.productId) {
         return res.status(400).json({
           success: false,
-          message: "شناسه محصول نامعتبر است.",
+          message: "شناسه محصول وارد نشده است.",
         });
       }
 
@@ -90,6 +89,10 @@ export const createOrder = async (req, res) => {
           message: "تعداد محصول نامعتبر است.",
         });
       }
+
+      // -----------------------------
+      // دریافت محصول از دیتابیس
+      // -----------------------------
 
       const product = await Product.findById(item.productId);
 
@@ -115,7 +118,7 @@ export const createOrder = async (req, res) => {
       // بررسی موجودی
       // -----------------------------
 
-      if (product.stock < quantity) {
+      if (Number(product.stock) < quantity) {
         return res.status(400).json({
           success: false,
           message: `موجودی محصول ${product.name} کافی نیست.`,
@@ -128,12 +131,19 @@ export const createOrder = async (req, res) => {
 
       const price = Number(product.price);
 
+      if (!Number.isFinite(price) || price < 0) {
+        return res.status(400).json({
+          success: false,
+          message: `قیمت محصول ${product.name} نامعتبر است.`,
+        });
+      }
+
       const itemTotal = price * quantity;
 
       calculatedTotal += itemTotal;
 
       // -----------------------------
-      // ذخیره Snapshot محصول
+      // Snapshot محصول
       // -----------------------------
 
       orderItems.push({
@@ -147,63 +157,99 @@ export const createOrder = async (req, res) => {
     }
 
     // -----------------------------
-    // ایجاد سفارش
-    // -----------------------------
-
-    const order = await Order.create({
-      user: userId,
-
-      customer: {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim(),
-        postalCode: postalCode.trim(),
-        address: address.trim(),
-      },
-
-      items: orderItems,
-
-      totalPrice: calculatedTotal,
-
-      status: "pending",
-    });
-
-    // -----------------------------
-    // کم کردن موجودی
+    // رزرو / کاهش موجودی
     // -----------------------------
 
     for (const item of orderItems) {
-      const updatedProduct =
-        await Product.findOneAndUpdate(
-          {
-            _id: item.productId,
-            stock: {
-              $gte: item.quantity,
-            },
+      const updatedProduct = await Product.findOneAndUpdate(
+        {
+          _id: item.productId,
+          isActive: true,
+          stock: {
+            $gte: item.quantity,
           },
-          {
-            $inc: {
-              stock: -item.quantity,
-            },
+        },
+        {
+          $inc: {
+            stock: -item.quantity,
           },
-          {
-            new: true,
-          }
-        );
+        },
+        {
+          new: true,
+        }
+      );
 
       if (!updatedProduct) {
-        // اگر موجودی هنگام ایجاد سفارش تغییر کرده باشد
-        await Order.findByIdAndDelete(order._id);
+        // اگر یکی از محصولات موجودی کافی نداشت،
+        // موجودی محصولات قبلی را برمی‌گردانیم.
+
+        for (const reservedItem of reservedItems) {
+          await Product.findByIdAndUpdate(
+            reservedItem.productId,
+            {
+              $inc: {
+                stock: reservedItem.quantity,
+              },
+            }
+          );
+        }
 
         return res.status(400).json({
           success: false,
           message: `موجودی محصول ${item.name} دیگر کافی نیست.`,
         });
       }
+
+      reservedItems.push({
+        productId: item.productId,
+        quantity: item.quantity,
+      });
     }
 
     // -----------------------------
-    // پاسخ
+    // ایجاد سفارش
+    // -----------------------------
+
+    let order;
+
+    try {
+      order = await Order.create({
+        user: userId,
+
+        customer: {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim(),
+          postalCode: postalCode.trim(),
+          address: address.trim(),
+        },
+
+        items: orderItems,
+
+        totalPrice: calculatedTotal,
+
+        status: "pending",
+      });
+    } catch (error) {
+      // اگر ایجاد سفارش شکست خورد،
+      // موجودی رزرو شده باید برگردد.
+
+      for (const reservedItem of reservedItems) {
+        await Product.findByIdAndUpdate(
+          reservedItem.productId,
+          {
+            $inc: {
+              stock: reservedItem.quantity,
+            },
+          }
+        );
+      }
+
+      throw error;
+    }
+
+    // -----------------------------
+    // پاسخ موفق
     // -----------------------------
 
     return res.status(201).json({
@@ -222,16 +268,19 @@ export const createOrder = async (req, res) => {
   }
 };
 
-
 // ======================================================
 // POST /api/orders/:id/pay
 // پرداخت سفارش
 // ======================================================
+
 export const payOrder = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const { id } = req.params;
+
+    // -----------------------------
+    // بررسی شناسه سفارش
+    // -----------------------------
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -239,6 +288,10 @@ export const payOrder = async (req, res) => {
         message: "شناسه سفارش نامعتبر است.",
       });
     }
+
+    // -----------------------------
+    // دریافت سفارش متعلق به کاربر
+    // -----------------------------
 
     const order = await Order.findOne({
       _id: id,
@@ -253,7 +306,7 @@ export const payOrder = async (req, res) => {
     }
 
     // -----------------------------
-    // قبلاً پرداخت شده
+    // سفارش قبلاً پرداخت شده
     // -----------------------------
 
     if (order.status === "paid") {
@@ -272,6 +325,17 @@ export const payOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "سفارش لغو شده و قابل پرداخت نیست.",
+      });
+    }
+
+    // -----------------------------
+    // فقط سفارش pending قابل پرداخت است
+    // -----------------------------
+
+    if (order.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "این سفارش در وضعیت قابل پرداخت نیست.",
       });
     }
 
@@ -299,11 +363,11 @@ export const payOrder = async (req, res) => {
   }
 };
 
-
 // ======================================================
 // GET /api/orders
 // سفارش‌های کاربر
 // ======================================================
+
 export const getMyOrders = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -330,16 +394,19 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-
 // ======================================================
 // GET /api/orders/:id
 // جزئیات یک سفارش
 // ======================================================
+
 export const getMyOrderById = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const { id } = req.params;
+
+    // -----------------------------
+    // بررسی شناسه
+    // -----------------------------
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -347,6 +414,10 @@ export const getMyOrderById = async (req, res) => {
         message: "شناسه سفارش نامعتبر است.",
       });
     }
+
+    // -----------------------------
+    // دریافت سفارش متعلق به کاربر
+    // -----------------------------
 
     const order = await Order.findOne({
       _id: id,
@@ -375,16 +446,19 @@ export const getMyOrderById = async (req, res) => {
   }
 };
 
-
 // ======================================================
 // PATCH /api/orders/:id/cancel
 // لغو سفارش
 // ======================================================
+
 export const cancelOrder = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const { id } = req.params;
+
+    // -----------------------------
+    // بررسی شناسه
+    // -----------------------------
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -392,6 +466,10 @@ export const cancelOrder = async (req, res) => {
         message: "شناسه سفارش نامعتبر است.",
       });
     }
+
+    // -----------------------------
+    // دریافت سفارش
+    // -----------------------------
 
     const order = await Order.findOne({
       _id: id,
@@ -405,12 +483,20 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
+    // -----------------------------
+    // سفارش پرداخت شده
+    // -----------------------------
+
     if (order.status === "paid") {
       return res.status(400).json({
         success: false,
         message: "سفارش پرداخت شده و قابل لغو نیست.",
       });
     }
+
+    // -----------------------------
+    // فقط pending قابل لغو است
+    // -----------------------------
 
     if (order.status !== "pending") {
       return res.status(400).json({
@@ -419,7 +505,10 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
+    // -----------------------------
     // برگرداندن موجودی
+    // -----------------------------
+
     for (const item of order.items) {
       await Product.findByIdAndUpdate(
         item.productId,
@@ -430,6 +519,10 @@ export const cancelOrder = async (req, res) => {
         }
       );
     }
+
+    // -----------------------------
+    // تغییر وضعیت سفارش
+    // -----------------------------
 
     order.status = "cancelled";
 
@@ -446,6 +539,88 @@ export const cancelOrder = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "لغو سفارش با خطا مواجه شد.",
+      error: error.message,
+    });
+  }
+};
+
+// ======================================================
+// GET /api/admin/orders
+// دریافت همه سفارش‌ها برای مدیر
+// ======================================================
+
+export const getAdminOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate(
+        "user",
+        "firstName lastName phone email"
+      )
+      .sort({
+        createdAt: -1,
+      });
+
+    return res.status(200).json({
+      success: true,
+      count: orders.length,
+      orders,
+    });
+  } catch (error) {
+    console.error("Get admin orders error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "دریافت سفارش‌های مدیر با خطا مواجه شد.",
+      error: error.message,
+    });
+  }
+};
+// ======================================================
+// GET /api/admin/orders/:id
+// دریافت جزئیات یک سفارش برای مدیر
+// ======================================================
+
+export const getAdminOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // -----------------------------
+    // بررسی شناسه سفارش
+    // -----------------------------
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "شناسه سفارش نامعتبر است.",
+      });
+    }
+
+    // -----------------------------
+    // دریافت سفارش
+    // -----------------------------
+
+    const order = await Order.findById(id).populate(
+      "user",
+      "firstName lastName phone email"
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "سفارش پیدا نشد.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    console.error("Get admin order by id error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "دریافت جزئیات سفارش با خطا مواجه شد.",
       error: error.message,
     });
   }
