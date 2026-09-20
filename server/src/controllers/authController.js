@@ -46,12 +46,14 @@ const getUserResponse = (user) => ({
 });
 
 // ======================================================
+// REGISTER
 // POST /api/auth/register
-// ثبت نام
 // ======================================================
 
 export const register = async (req, res) => {
   try {
+    const body = req.body || {};
+
     const {
       firstName,
       lastName,
@@ -60,7 +62,7 @@ export const register = async (req, res) => {
       password,
       address,
       postalCode,
-    } = req.body;
+    } = body;
 
     if (!firstName || !lastName || !phone || !email || !password) {
       return res.status(400).json({
@@ -159,13 +161,18 @@ export const register = async (req, res) => {
 };
 
 // ======================================================
+// LOGIN
 // POST /api/auth/login
-// ورود کاربر
 // ======================================================
 
 export const login = async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    const body = req.body || {};
+
+    const {
+      phone,
+      password,
+    } = body;
 
     if (!phone || !password) {
       return res.status(400).json({
@@ -235,8 +242,8 @@ export const login = async (req, res) => {
 };
 
 // ======================================================
+// ADMIN LOGIN
 // POST /api/auth/admin-login
-// ورود مدیر
 // ======================================================
 
 export const adminLogin = async (req, res) => {
@@ -244,18 +251,31 @@ export const adminLogin = async (req, res) => {
   console.log("ADMIN LOGIN START");
 
   try {
-    const { phone, password } = req.body;
+    const body = req.body || {};
 
-    console.log("1. BODY RECEIVED");
+    console.log("REQUEST BODY EXISTS:", Boolean(req.body));
+    console.log(
+      "REQUEST CONTENT TYPE:",
+      req.headers["content-type"]
+    );
+
+    const {
+      phone,
+      password,
+    } = body;
+
     console.log("PHONE:", phone);
-    console.log("PASSWORD RECEIVED:", Boolean(password));
+    console.log(
+      "PASSWORD RECEIVED:",
+      Boolean(password)
+    );
 
     // --------------------------------------------------
     // Validation
     // --------------------------------------------------
 
     if (!phone || !password) {
-      console.log("2. PHONE OR PASSWORD MISSING");
+      console.log("ADMIN LOGIN: MISSING CREDENTIALS");
 
       return res.status(400).json({
         success: false,
@@ -265,10 +285,13 @@ export const adminLogin = async (req, res) => {
 
     const normalizedPhone = String(phone).trim();
 
-    console.log("3. NORMALIZED PHONE:", normalizedPhone);
+    console.log(
+      "NORMALIZED PHONE:",
+      normalizedPhone
+    );
 
     if (!isValidPhone(normalizedPhone)) {
-      console.log("4. INVALID PHONE");
+      console.log("ADMIN LOGIN: INVALID PHONE");
 
       return res.status(400).json({
         success: false,
@@ -280,17 +303,19 @@ export const adminLogin = async (req, res) => {
     // Find user
     // --------------------------------------------------
 
-    console.log("5. FINDING USER...");
+    console.log("FINDING ADMIN USER...");
 
     const user = await User.findOne({
       phone: normalizedPhone,
     }).select("+password");
 
-    console.log("6. USER QUERY FINISHED");
-    console.log("USER FOUND:", Boolean(user));
+    console.log(
+      "USER FOUND:",
+      Boolean(user)
+    );
 
     if (!user) {
-      console.log("7. USER NOT FOUND");
+      console.log("ADMIN LOGIN: USER NOT FOUND");
 
       return res.status(401).json({
         success: false,
@@ -298,27 +323,40 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    console.log("8. USER ID:", user._id.toString());
-    console.log("9. USER ROLE:", user.role);
     console.log(
-      "10. PASSWORD EXISTS:",
+      "USER ID:",
+      user._id.toString()
+    );
+
+    console.log(
+      "USER ROLE:",
+      user.role
+    );
+
+    console.log(
+      "PASSWORD EXISTS:",
       Boolean(user.password)
     );
 
     // --------------------------------------------------
-    // Password check
+    // Password
     // --------------------------------------------------
 
     if (!user.password) {
-      console.log("11. PASSWORD NOT FOUND");
+      console.log(
+        "ADMIN LOGIN: PASSWORD NOT FOUND"
+      );
 
       return res.status(500).json({
         success: false,
-        message: "رمز عبور کاربر در سرور موجود نیست.",
+        message:
+          "رمز عبور کاربر در سرور موجود نیست.",
       });
     }
 
-    console.log("12. START BCRYPT COMPARE");
+    console.log(
+      "START BCRYPT COMPARE"
+    );
 
     let passwordCorrect = false;
 
@@ -328,40 +366,55 @@ export const adminLogin = async (req, res) => {
         user.password
       );
     } catch (bcryptError) {
-      console.error("BCRYPT ERROR");
-      console.error("NAME:", bcryptError.name);
-      console.error("MESSAGE:", bcryptError.message);
-      console.error("STACK:", bcryptError.stack);
+      console.error(
+        "ADMIN BCRYPT ERROR"
+      );
+
+      console.error(
+        "NAME:",
+        bcryptError.name
+      );
+
+      console.error(
+        "MESSAGE:",
+        bcryptError.message
+      );
 
       return res.status(500).json({
         success: false,
-        message: "خطا در بررسی رمز عبور.",
+        message:
+          "خطا در بررسی رمز عبور.",
       });
     }
 
     console.log(
-      "13. BCRYPT RESULT:",
+      "BCRYPT RESULT:",
       passwordCorrect
     );
 
     if (!passwordCorrect) {
-      console.log("14. WRONG PASSWORD");
+      console.log(
+        "ADMIN LOGIN: WRONG PASSWORD"
+      );
 
       return res.status(401).json({
         success: false,
-        message: "اطلاعات ورود مدیر نادرست است.",
+        message:
+          "اطلاعات ورود مدیر نادرست است.",
       });
     }
 
-    // --------------------------------------------------
-    // Admin role check
-    // --------------------------------------------------
+    console.log(
+      "ADMIN PASSWORD CORRECT"
+    );
 
-    console.log("15. PASSWORD CORRECT");
+    // --------------------------------------------------
+    // Role
+    // --------------------------------------------------
 
     if (user.role !== "admin") {
       console.log(
-        "16. ROLE CHECK FAILED:",
+        "ADMIN LOGIN: ROLE DENIED:",
         user.role
       );
 
@@ -372,22 +425,17 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    console.log("17. ADMIN ROLE CHECK PASSED");
-
-    // --------------------------------------------------
-    // JWT check
-    // --------------------------------------------------
-
     console.log(
-      "18. JWT_SECRET:",
-      process.env.JWT_SECRET
-        ? "SET"
-        : "NOT SET"
+      "ADMIN ROLE CHECK PASSED"
     );
+
+    // --------------------------------------------------
+    // JWT
+    // --------------------------------------------------
 
     if (!process.env.JWT_SECRET) {
       console.error(
-        "JWT_SECRET IS NOT CONFIGURED"
+        "ADMIN LOGIN: JWT_SECRET NOT SET"
       );
 
       return res.status(500).json({
@@ -397,11 +445,9 @@ export const adminLogin = async (req, res) => {
       });
     }
 
-    // --------------------------------------------------
-    // Generate token
-    // --------------------------------------------------
-
-    console.log("19. GENERATING JWT...");
+    console.log(
+      "JWT_SECRET: SET"
+    );
 
     let token;
 
@@ -411,46 +457,100 @@ export const adminLogin = async (req, res) => {
         user.role
       );
     } catch (jwtError) {
-      console.error("JWT ERROR");
-      console.error("NAME:", jwtError.name);
-      console.error("MESSAGE:", jwtError.message);
-      console.error("STACK:", jwtError.stack);
+      console.error(
+        "ADMIN JWT ERROR"
+      );
+
+      console.error(
+        "NAME:",
+        jwtError.name
+      );
+
+      console.error(
+        "MESSAGE:",
+        jwtError.message
+      );
 
       return res.status(500).json({
         success: false,
-        message: "خطا در ساخت توکن ورود.",
+        message:
+          "خطا در ساخت توکن ورود.",
       });
     }
 
-    console.log("20. JWT GENERATED");
-    console.log("21. ADMIN LOGIN SUCCESS");
-    console.log("======================================");
+    console.log(
+      "JWT GENERATED"
+    );
+
+    // --------------------------------------------------
+    // Response
+    // --------------------------------------------------
+
+    const responseUser = getUserResponse(user);
+
+    console.log(
+      "USER RESPONSE CREATED"
+    );
+
+    console.log(
+      "ADMIN LOGIN SUCCESS"
+    );
+
+    console.log(
+      "======================================"
+    );
 
     return res.status(200).json({
       success: true,
-      message: "ورود مدیر با موفقیت انجام شد.",
+      message:
+        "ورود مدیر با موفقیت انجام شد.",
       token,
-      user: getUserResponse(user),
+      user: responseUser,
     });
   } catch (error) {
-    console.error("======================================");
-    console.error("ADMIN LOGIN UNEXPECTED ERROR");
-    console.error("NAME:", error.name);
-    console.error("CODE:", error.code);
-    console.error("MESSAGE:", error.message);
-    console.error("STACK:", error.stack);
-    console.error("======================================");
+    console.error(
+      "======================================"
+    );
+
+    console.error(
+      "ADMIN LOGIN UNEXPECTED ERROR"
+    );
+
+    console.error(
+      "NAME:",
+      error.name
+    );
+
+    console.error(
+      "CODE:",
+      error.code
+    );
+
+    console.error(
+      "MESSAGE:",
+      error.message
+    );
+
+    console.error(
+      "STACK:",
+      error.stack
+    );
+
+    console.error(
+      "======================================"
+    );
 
     return res.status(500).json({
       success: false,
-      message: "ورود به پنل مدیریت با خطا مواجه شد.",
+      message:
+        "ورود به پنل مدیریت با خطا مواجه شد.",
     });
   }
 };
 
 // ======================================================
+// GET ME
 // GET /api/auth/me
-// اطلاعات کاربر فعلی
 // ======================================================
 
 export const getMe = async (req, res) => {
@@ -458,7 +558,8 @@ export const getMe = async (req, res) => {
     if (!req.user?._id) {
       return res.status(401).json({
         success: false,
-        message: "کاربر احراز هویت نشده است.",
+        message:
+          "کاربر احراز هویت نشده است.",
       });
     }
 
@@ -478,28 +579,38 @@ export const getMe = async (req, res) => {
       user: getUserResponse(user),
     });
   } catch (error) {
-    console.error("GET ME ERROR:", error);
+    console.error(
+      "GET ME ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "دریافت اطلاعات کاربر با خطا مواجه شد.",
+      message:
+        "دریافت اطلاعات کاربر با خطا مواجه شد.",
     });
   }
 };
 
 // ======================================================
+// UPDATE PROFILE
 // PUT /api/auth/profile
-// ویرایش پروفایل
 // ======================================================
 
-export const updateProfile = async (req, res) => {
+export const updateProfile = async (
+  req,
+  res
+) => {
   try {
     if (!req.user?._id) {
       return res.status(401).json({
         success: false,
-        message: "کاربر احراز هویت نشده است.",
+        message:
+          "کاربر احراز هویت نشده است.",
       });
     }
+
+    const body = req.body || {};
 
     const {
       firstName,
@@ -507,7 +618,7 @@ export const updateProfile = async (req, res) => {
       email,
       address,
       postalCode,
-    } = req.body;
+    } = body;
 
     const user = await User.findById(
       req.user._id
@@ -521,62 +632,78 @@ export const updateProfile = async (req, res) => {
     }
 
     if (firstName !== undefined) {
-      user.firstName = String(firstName).trim();
+      user.firstName =
+        String(firstName).trim();
     }
 
     if (lastName !== undefined) {
-      user.lastName = String(lastName).trim();
+      user.lastName =
+        String(lastName).trim();
     }
 
     if (email !== undefined) {
-      const normalizedEmail = String(email)
-        .trim()
-        .toLowerCase();
+      const normalizedEmail =
+        String(email)
+          .trim()
+          .toLowerCase();
 
       if (!isValidEmail(normalizedEmail)) {
         return res.status(400).json({
           success: false,
-          message: "ایمیل معتبر نیست.",
+          message:
+            "ایمیل معتبر نیست.",
         });
       }
 
-      const existingEmail = await User.findOne({
-        email: normalizedEmail,
-        _id: { $ne: user._id },
-      });
+      const existingEmail =
+        await User.findOne({
+          email: normalizedEmail,
+          _id: {
+            $ne: user._id,
+          },
+        });
 
       if (existingEmail) {
         return res.status(409).json({
           success: false,
-          message: "این ایمیل قبلاً ثبت شده است.",
+          message:
+            "این ایمیل قبلاً ثبت شده است.",
         });
       }
 
-      user.email = normalizedEmail;
+      user.email =
+        normalizedEmail;
     }
 
     if (address !== undefined) {
-      user.address = String(address).trim();
+      user.address =
+        String(address).trim();
     }
 
     if (postalCode !== undefined) {
-      user.postalCode = String(postalCode).trim();
+      user.postalCode =
+        String(postalCode).trim();
     }
 
     await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "اطلاعات پروفایل با موفقیت بروزرسانی شد.",
+      message:
+        "اطلاعات پروفایل با موفقیت بروزرسانی شد.",
       user: getUserResponse(user),
     });
   } catch (error) {
-    console.error("UPDATE PROFILE ERROR:", error);
+    console.error(
+      "UPDATE PROFILE ERROR:",
+      error
+    );
 
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
-        message: "این ایمیل قبلاً ثبت شده است.",
+        message:
+          "این ایمیل قبلاً ثبت شده است.",
       });
     }
 
@@ -589,29 +716,37 @@ export const updateProfile = async (req, res) => {
 };
 
 // ======================================================
+// FORGOT PASSWORD
 // POST /api/auth/forgot-password
-// درخواست بازیابی رمز
 // ======================================================
 
-export const forgotPassword = async (req, res) => {
+export const forgotPassword = async (
+  req,
+  res
+) => {
   try {
-    const { email } = req.body;
+    const body = req.body || {};
+
+    const { email } = body;
 
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: "ایمیل الزامی است.",
+        message:
+          "ایمیل الزامی است.",
       });
     }
 
-    const normalizedEmail = String(email)
-      .trim()
-      .toLowerCase();
+    const normalizedEmail =
+      String(email)
+        .trim()
+        .toLowerCase();
 
     if (!isValidEmail(normalizedEmail)) {
       return res.status(400).json({
         success: false,
-        message: "ایمیل معتبر نیست.",
+        message:
+          "ایمیل معتبر نیست.",
       });
     }
 
@@ -629,16 +764,21 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetToken =
+      crypto.randomBytes(32).toString("hex");
 
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    const hashedToken =
+      crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
 
-    user.resetPasswordToken = hashedToken;
+    user.resetPasswordToken =
+      hashedToken;
+
     user.resetPasswordExpires =
-      Date.now() + 60 * 60 * 1000;
+      Date.now() +
+      15 * 60 * 1000;
 
     await user.save({
       validateBeforeSave: false,
@@ -662,7 +802,10 @@ export const forgotPassword = async (req, res) => {
         "لینک بازیابی رمز عبور به ایمیل شما ارسال شد.",
     });
   } catch (error) {
-    console.error("FORGOT PASSWORD ERROR:", error);
+    console.error(
+      "FORGOT PASSWORD ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -673,23 +816,33 @@ export const forgotPassword = async (req, res) => {
 };
 
 // ======================================================
+// RESET PASSWORD
 // POST /api/auth/reset-password/:token
-// تغییر رمز عبور
 // ======================================================
 
-export const resetPassword = async (req, res) => {
+export const resetPassword = async (
+  req,
+  res
+) => {
   try {
     const { token } = req.params;
-    const { password } = req.body;
+
+    const body = req.body || {};
+
+    const { password } = body;
 
     if (!token) {
       return res.status(400).json({
         success: false,
-        message: "توکن بازیابی ارسال نشده است.",
+        message:
+          "توکن بازیابی ارسال نشده است.",
       });
     }
 
-    if (!password || String(password).length < 6) {
+    if (
+      !password ||
+      String(password).length < 6
+    ) {
       return res.status(400).json({
         success: false,
         message:
@@ -697,10 +850,11 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const hashedToken =
+      crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
@@ -719,13 +873,17 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    user.password = await bcrypt.hash(
-      String(password),
-      12
-    );
+    user.password =
+      await bcrypt.hash(
+        String(password),
+        12
+      );
 
-    user.resetPasswordToken = null;
-    user.resetPasswordExpires = null;
+    user.resetPasswordToken =
+      null;
+
+    user.resetPasswordExpires =
+      null;
 
     await user.save();
 
@@ -735,7 +893,10 @@ export const resetPassword = async (req, res) => {
         "رمز عبور با موفقیت تغییر کرد.",
     });
   } catch (error) {
-    console.error("RESET PASSWORD ERROR:", error);
+    console.error(
+      "RESET PASSWORD ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
